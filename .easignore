@@ -1,0 +1,30 @@
+node_modules/
+.git/
+.DS_Store
+.expo/
+.gradle/
+android/build/
+ios/build/
+build/
+dist/
+.cache/
+.tmp/
+.watchman/
+.watchmanconfig
+.idea/
+.vscode/
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Rust/Cargo caches that can sneak into the repo and break case-sensitive tarballing
+.cargo/
+.cargo/**/*
+
+# CocoaPods artifacts
+ios/Pods/
+
+# React Native codegen artifacts
+ios/build/generated/
+

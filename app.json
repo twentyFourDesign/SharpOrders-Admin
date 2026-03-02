@@ -1,0 +1,40 @@
+{
+  "expo": {
+    "name": "SharpOrder",
+    "slug": "sharporder",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./src/assets/icons/logo.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./src/assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.sharporder",
+      "googleServicesFile": "./GoogleService-Info.plist"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./src/assets/icons/logo.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.sharporder",
+      "googleServicesFile": "./google-services.json"
+    },
+    "web": {
+      "bundler": "metro",
+      "favicon": "./src/assets/icons/logo.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "2d0ee207-6d74-4e46-975e-be03b58ac57c"
+      }
+    }
+  }
+}
