@@ -3,33 +3,9 @@
     "name": "SharpOrder",
     "slug": "sharporder",
     "version": "1.0.0",
-    "orientation": "portrait",
-    "icon": "./src/assets/icons/logo.png",
-    "userInterfaceStyle": "light",
-    "splash": {
-      "image": "./src/assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
-    "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.sharporder",
-      "googleServicesFile": "./GoogleService-Info.plist"
-    },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./src/assets/icons/logo.png",
-        "backgroundColor": "#ffffff"
-      },
-      "package": "com.sharporder",
-      "googleServicesFile": "./google-services.json"
-    },
+    "assetBundlePatterns": ["**/*"],
     "web": {
-      "bundler": "metro",
-      "favicon": "./src/assets/icons/logo.png"
+      "bundler": "metro"
     },
     "extra": {
       "eas": {

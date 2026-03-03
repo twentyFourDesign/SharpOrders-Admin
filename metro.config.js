@@ -9,9 +9,7 @@ const path = require('path');
  */
 const config = getDefaultConfig(__dirname);
 
-// Add custom resolver configuration
-config.resolver.sourceExts = ['js', 'json', 'ts', 'tsx', 'jsx', 'mjs'];
-config.resolver.platforms = ['ios', 'android', 'web'];
+// Use Expo defaults for resolver extensions/platforms to avoid missing defaults
 
 config.resolver.resolveRequest = (context, moduleName, platform) => {
   if (platform === 'web') {
