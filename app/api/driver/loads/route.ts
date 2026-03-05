@@ -54,6 +54,8 @@ export async function GET(request: Request) {
         loadStatus: load.status,
         appliedByMe: !!myBid,
         myBidStatus: myBid?.status ?? null, // null | 'pending' | 'accepted' | 'rejected'
+        pickupMapsUrl: (load as any).pickupMapsUrl ?? null,
+        deliveryMapsUrl: (load as any).deliveryMapsUrl ?? null,
       };
     });
 

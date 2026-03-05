@@ -54,6 +54,8 @@ export async function POST(request: Request) {
     recipientName,
     recipientNumber,
     fareOffer,
+    pickupMapsUrl,
+    deliveryMapsUrl,
   } = body as {
     pickupAddress?: string;
     deliveryAddress?: string;
@@ -62,6 +64,8 @@ export async function POST(request: Request) {
     recipientName?: string;
     recipientNumber?: string;
     fareOffer?: number;
+    pickupMapsUrl?: string | null;
+    deliveryMapsUrl?: string | null;
   };
 
   if (
@@ -82,6 +86,8 @@ export async function POST(request: Request) {
       shipperId: payload.sub,
       pickupAddress,
       deliveryAddress,
+      pickupMapsUrl: pickupMapsUrl ?? null,
+      deliveryMapsUrl: deliveryMapsUrl ?? null,
       truckType,
       loadDescription,
       recipientName: recipientName ?? null,
