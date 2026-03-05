@@ -1,0 +1,34 @@
+{
+  "name": "sharporder-backed",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:generate": "prisma generate"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.1",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "next": "16.1.6",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "resend": "^4.8.0"
+  },
+  "devDependencies": {
+    "@prisma/client": "^6.0.0",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.1.6",
+    "prisma": "^6.0.0",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
