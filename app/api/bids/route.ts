@@ -43,12 +43,6 @@ export async function POST(request: Request) {
     },
   });
 
-  // Optionally mark load as applied
-  await prisma.load.update({
-    where: { id: loadId },
-    data: { status: "applied" },
-  });
-
   return NextResponse.json(bid);
 }
 

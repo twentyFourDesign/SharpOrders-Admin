@@ -87,7 +87,7 @@ export async function POST(request: Request) {
       recipientName: recipientName ?? null,
       recipientNumber: recipientNumber ?? null,
       fareOffer,
-      status: "available",
+      status: "draft",
     },
   });
 
