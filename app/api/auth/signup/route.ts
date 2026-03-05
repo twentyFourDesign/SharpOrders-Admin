@@ -35,12 +35,23 @@ export async function POST(request: Request) {
     );
   }
 
-  await prisma.appUser.create({
+  const user = await prisma.appUser.create({
     data: {
       email: normalizedEmail,
       passwordHash,
       role,
     },
+  });
+
+  // Ensure a matching Profile row exists for foreign keys (loads.shipper_id, etc.)
+  await prisma.profile.upsert({
+    where: { id: user.id },
+    create: {
+      id: user.id,
+      email: normalizedEmail,
+      userType: role === "shipper" ? "shipper" : "driver",
+    },
+    update: {},
   });
 
   const code = Math.floor(100000 + Math.random() * 900000).toString();
