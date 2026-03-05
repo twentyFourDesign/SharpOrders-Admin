@@ -97,8 +97,10 @@ model Load {
   shipperId       String     @db.Uuid @map("shipper_id")
   shipper         Profile    @relation("ShipperLoads", fields: [shipperId], references: [id])
 
-  pickupAddress   String @map("pickup_address")
-  deliveryAddress String @map("delivery_address")
+  pickupAddress   String  @map("pickup_address")
+  deliveryAddress String  @map("delivery_address")
+  pickupMapsUrl   String? @map("pickup_maps_url")
+  deliveryMapsUrl String? @map("delivery_maps_url")
   truckType       String @map("truck_type")
   loadDescription String @map("load_description")
 
