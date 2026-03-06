@@ -77,7 +77,7 @@ export async function PATCH(request: Request) {
         { status: 400 },
       );
     }
-    await prisma.profile.update({
+    await (prisma as any).profile.update({
       where: { id: payload.sub },
       data: { truckImageUrls: truckImageUrls as unknown as object },
     });
