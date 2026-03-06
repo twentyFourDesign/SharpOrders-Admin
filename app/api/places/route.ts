@@ -27,11 +27,18 @@ export async function GET(request: Request) {
   }
 
   try {
+    // Use Places Autocomplete so results are more generic / global.
     const url = new URL(
-      "https://maps.googleapis.com/maps/api/place/textsearch/json",
+      "https://maps.googleapis.com/maps/api/place/autocomplete/json",
     );
-    url.searchParams.set("query", query);
+    url.searchParams.set("input", query);
     url.searchParams.set("key", GMAPS_API_KEY);
+    // Only address / geocode-style results
+    url.searchParams.set("types", "geocode");
+    // Keep UI predictable regardless of device locale
+    url.searchParams.set("language", "en");
+    // Hint that results can come from anywhere (full-world rectangle)
+    url.searchParams.set("locationbias", "rect:-90,-180|90,180");
 
     const res = await fetch(url.toString());
     if (!res.ok) {
@@ -43,34 +50,27 @@ export async function GET(request: Request) {
     }
 
     const data = await res.json();
-    const results: PlaceResult[] = Array.isArray(data.results)
-      ? data.results.slice(0, 6).map((r: any) => {
-          const name: string = r.name ?? "";
-          const address: string = r.formatted_address ?? "";
-          const label =
-            address && !address.toLowerCase().includes(name.toLowerCase())
-              ? `${name}, ${address}`
-              : name || address;
-          const lat = r.geometry?.location?.lat ?? null;
-          const lng = r.geometry?.location?.lng ?? null;
-          const placeId: string = r.place_id ?? "";
-          // Use coordinates when available (most reliable); then place_id; fallback to text search
-          const mapsUrl =
-            lat != null && lng != null
-              ? `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`
-              : placeId
-                ? `https://www.google.com/maps/search/?api=1&query=place_id:${encodeURIComponent(placeId)}`
-                : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(label)}`;
 
-          return {
-            id: placeId || label,
-            label,
-            lat,
-            lng,
-            mapsUrl,
-          };
-        })
-      : [];
+    if (data.status && data.status !== "OK") {
+      console.error("[places] Google Autocomplete status", data.status, data.error_message);
+    }
+
+    const predictions = Array.isArray(data.predictions) ? data.predictions : [];
+    const results: PlaceResult[] = predictions.slice(0, 6).map((p: any) => {
+      const label: string = p.description ?? "";
+      const placeId: string = p.place_id ?? label;
+      const mapsUrl = `https://www.google.com/maps/search/?api=1&query=place_id:${encodeURIComponent(
+        placeId,
+      )}`;
+
+      return {
+        id: placeId,
+        label,
+        lat: null,
+        lng: null,
+        mapsUrl,
+      };
+    });
 
     return NextResponse.json(results);
   } catch (error) {
