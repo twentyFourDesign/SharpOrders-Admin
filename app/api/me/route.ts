@@ -27,6 +27,15 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
-  return NextResponse.json(user);
+  // Read profile-level metadata (including profile photo) from the Profile table
+  const profile = await prisma.profile.findUnique({
+    where: { id: payload.sub },
+    select: { profilePhotoUrl: true },
+  });
+
+  return NextResponse.json({
+    ...user,
+    profilePhotoUrl: profile?.profilePhotoUrl ?? null,
+  });
 }
 

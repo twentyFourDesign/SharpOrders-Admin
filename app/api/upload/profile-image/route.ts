@@ -91,14 +91,17 @@ export async function POST(request: Request) {
 
   const publicUrl = urlData.publicUrl;
 
-  // Persist on the user so it survives app reloads
+  // Persist on the Profile row so it survives app reloads
   try {
-    await prisma.appUser.update({
+    await prisma.profile.update({
       where: { id: payload.sub },
       data: { profilePhotoUrl: publicUrl },
     });
   } catch (e) {
-    console.error("[upload/profile-image] Failed to persist profilePhotoUrl", e);
+    console.error(
+      "[upload/profile-image] Failed to persist profilePhotoUrl on profile",
+      e,
+    );
   }
 
   return NextResponse.json({ url: publicUrl });

@@ -28,7 +28,6 @@ export async function POST(request: Request) {
     phoneNumber,
     truckType,
     licenseNumber,
-    profilePhotoUrl,
   } = body as {
     businessName?: string;
     phone?: string;
@@ -37,7 +36,6 @@ export async function POST(request: Request) {
     phoneNumber?: string;
     truckType?: string;
     licenseNumber?: string;
-    profilePhotoUrl?: string | null;
   };
 
   const user = await prisma.appUser.update({
@@ -50,7 +48,6 @@ export async function POST(request: Request) {
       phoneNumber,
       truckType,
       licenseNumber,
-      profilePhotoUrl,
     },
   });
 
