@@ -55,13 +55,18 @@ export async function POST(request: Request, context: Params) {
       );
     }
 
-    const updated = await prisma.shipment.update({
+    // Cast prisma to any so this continues to work even if
+    // the generated Prisma types on the build server don't yet
+    // include driverRating on Shipment.
+    const updated = await (prisma as any).shipment.update({
       where: { id: shipmentId },
       data: { driverRating: rating },
       select: { id: true, driverRating: true },
     });
 
-    return NextResponse.json(updated);
+    return NextResponse.json(
+      updated as { id: string; driverRating: number | null },
+    );
   } catch (error) {
     console.error("[POST /api/shipments/[id]/rating] error", error);
     return NextResponse.json(
