@@ -38,6 +38,9 @@ export async function GET(request: Request, context: Params) {
           where: { driverId },
           select: { id: true, status: true, offerAmount: true },
         },
+        shipment: {
+          select: { id: true },
+        },
       },
     });
 
@@ -59,6 +62,7 @@ export async function GET(request: Request, context: Params) {
       myBidStatus: myBid?.status ?? null,
       myBidId: myBid?.id ?? null,
       myBidOfferAmount: myBid?.offerAmount ?? null,
+      shipmentId: load.shipment?.id ?? null,
     };
 
     return NextResponse.json(result);

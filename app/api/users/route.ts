@@ -28,28 +28,52 @@ export async function POST(request: Request) {
     phoneNumber,
     truckType,
     licenseNumber,
+    profilePhotoUrl,
   } = body as {
-    businessName?: string;
-    phone?: string;
-    firstName?: string;
-    lastName?: string;
-    phoneNumber?: string;
-    truckType?: string;
-    licenseNumber?: string;
+    businessName?: string | null;
+    phone?: string | null;
+    firstName?: string | null;
+    lastName?: string | null;
+    phoneNumber?: string | null;
+    truckType?: string | null;
+    licenseNumber?: string | null;
+    profilePhotoUrl?: string | null;
   };
 
+  // Update core auth user record
   const user = await prisma.appUser.update({
     where: { id: payload.sub },
     data: {
-      businessName,
-      phone,
-      firstName,
-      lastName,
-      phoneNumber,
-      truckType,
-      licenseNumber,
+      businessName: businessName ?? undefined,
+      phone: phone ?? undefined,
+      firstName: firstName ?? undefined,
+      lastName: lastName ?? undefined,
+      phoneNumber: phoneNumber ?? undefined,
+      truckType: truckType ?? undefined,
+      licenseNumber: licenseNumber ?? undefined,
     },
   });
+
+  // Keep the Profile row in sync so shipment / load relations
+  // can reliably read shipper/driver display details.
+  try {
+    await prisma.profile.update({
+      where: { id: payload.sub },
+      data: {
+        businessName: businessName ?? undefined,
+        phone: phone ?? undefined,
+        firstName: firstName ?? undefined,
+        lastName: lastName ?? undefined,
+        phoneNumber: phoneNumber ?? undefined,
+        truckType: truckType ?? undefined,
+        licenseNumber: licenseNumber ?? undefined,
+        profilePhotoUrl: profilePhotoUrl ?? undefined,
+      },
+    });
+  } catch {
+    // If the profile row is missing or schema is slightly different,
+    // don't fail the whole request – the appUser update above is enough.
+  }
 
   return NextResponse.json(user);
 }
