@@ -16,7 +16,7 @@ export async function POST(request: Request) {
 
   const payload = verifyAuthToken(token);
 
-  if (!payload || payload.role !== "shipper") {
+  if (!payload) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

@@ -19,7 +19,7 @@ export async function GET(request: Request, context: Params) {
 
     const payload = verifyAuthToken(token);
 
-    if (!payload || payload.role !== "shipper") {
+    if (!payload) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
