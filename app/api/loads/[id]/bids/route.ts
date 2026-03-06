@@ -27,7 +27,16 @@ export async function GET(request: Request, context: Params) {
 
     const load = await prisma.load.findUnique({
       where: { id: loadId },
-      select: { id: true, shipperId: true },
+      select: {
+        id: true,
+        shipperId: true,
+        pickupAddress: true,
+        deliveryAddress: true,
+        truckType: true,
+        loadDescription: true,
+        fareOffer: true,
+        loadImageUrl: true,
+      },
     });
 
     if (!load || load.shipperId !== payload.sub) {
@@ -51,7 +60,7 @@ export async function GET(request: Request, context: Params) {
       },
     });
 
-    return NextResponse.json(bids);
+    return NextResponse.json({ load, bids });
   } catch (error) {
     console.error("[GET /api/loads/[id]/bids] error", error);
     return NextResponse.json(

@@ -52,6 +52,7 @@ export async function GET(request: Request) {
         loadDescription: load.loadDescription,
         fareOffer: load.fareOffer,
         loadStatus: load.status,
+        loadImageUrl: load.loadImageUrl ?? null,
         appliedByMe: !!myBid,
         myBidStatus: myBid?.status ?? null, // null | 'pending' | 'accepted' | 'rejected'
         pickupMapsUrl: (load as any).pickupMapsUrl ?? null,

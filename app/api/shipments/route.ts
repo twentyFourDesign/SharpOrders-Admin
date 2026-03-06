@@ -35,6 +35,7 @@ export async function GET(request: Request) {
             loadDescription: true,
             recipientName: true,
             recipientNumber: true,
+            loadImageUrl: true,
           },
         },
         driver: {

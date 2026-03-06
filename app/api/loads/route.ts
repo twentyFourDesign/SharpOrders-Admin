@@ -56,6 +56,7 @@ export async function POST(request: Request) {
     fareOffer,
     pickupMapsUrl,
     deliveryMapsUrl,
+    loadImageUrl,
   } = body as {
     pickupAddress?: string;
     deliveryAddress?: string;
@@ -66,6 +67,7 @@ export async function POST(request: Request) {
     fareOffer?: number;
     pickupMapsUrl?: string | null;
     deliveryMapsUrl?: string | null;
+    loadImageUrl?: string | null;
   };
 
   if (
@@ -93,6 +95,7 @@ export async function POST(request: Request) {
       recipientName: recipientName ?? null,
       recipientNumber: recipientNumber ?? null,
       fareOffer,
+      loadImageUrl: loadImageUrl ?? null,
       status: "available",
     },
   });
