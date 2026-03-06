@@ -92,7 +92,8 @@ export async function POST(request: Request) {
   const publicUrl = urlData.publicUrl;
 
   try {
-    const profile = await prisma.profile.findUnique({
+    const profileDb = (prisma as any).profile;
+    const profile = await profileDb.findUnique({
       where: { id: payload.sub },
       select: { truckImageUrls: true },
     });
@@ -100,9 +101,9 @@ export async function POST(request: Request) {
     const current = (profile?.truckImageUrls as string[] | null) ?? [];
     const next = [...current, publicUrl];
 
-    await prisma.profile.update({
+    await profileDb.update({
       where: { id: payload.sub },
-      data: { truckImageUrls: next as unknown as object },
+      data: { truckImageUrls: next },
     });
   } catch (e) {
     console.error(

@@ -92,7 +92,7 @@ export async function POST(request: Request) {
   const publicUrl = urlData.publicUrl;
 
   try {
-    await prisma.profile.update({
+    await (prisma as any).profile.update({
       where: { id: payload.sub },
       data: { licenseImageUrl: publicUrl },
     });

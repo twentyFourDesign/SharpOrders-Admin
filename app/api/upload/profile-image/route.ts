@@ -93,7 +93,7 @@ export async function POST(request: Request) {
 
   // Persist on the Profile row so it survives app reloads
   try {
-    await prisma.profile.update({
+    await (prisma as any).profile.update({
       where: { id: payload.sub },
       data: { profilePhotoUrl: publicUrl },
     });
