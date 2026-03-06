@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyAuthToken } from "@/lib/jwt";
 
+
 // GET /api/notifications — returns user's notifications (newest first)
 export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");
