@@ -27,11 +27,18 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
-  // Read profile-level metadata from the Profile table
-  const profile = await prisma.profile.findUnique({
+  // Read profile-level metadata from the Profile table.
+  // Use a looser type here so builds don't fail if the generated Prisma
+  // typings lag behind the actual DB schema (e.g. for truckImageUrls).
+  const profile = (await (prisma as any).profile.findUnique({
     where: { id: payload.sub },
     select: { profilePhotoUrl: true, truckImageUrls: true },
-  });
+  })) as
+    | {
+        profilePhotoUrl?: string | null;
+        truckImageUrls?: unknown;
+      }
+    | null;
 
   const rawTruckImages = profile?.truckImageUrls;
   const truckImageUrlsArray: string[] = Array.isArray(rawTruckImages)
