@@ -54,13 +54,13 @@ export async function GET(request: Request) {
           const lat = r.geometry?.location?.lat ?? null;
           const lng = r.geometry?.location?.lng ?? null;
           const placeId: string = r.place_id ?? "";
-          const mapsUrl = placeId
-            ? `https://www.google.com/maps/place/?q=place_id:${placeId}`
-            : lat != null && lng != null
+          // Use coordinates when available (most reliable); then place_id; fallback to text search
+          const mapsUrl =
+            lat != null && lng != null
               ? `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`
-              : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                  label,
-                )}`;
+              : placeId
+                ? `https://www.google.com/maps/search/?api=1&query=place_id:${encodeURIComponent(placeId)}`
+                : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(label)}`;
 
           return {
             id: placeId || label,
