@@ -36,6 +36,8 @@ export async function GET(request: Request) {
             recipientName: true,
             recipientNumber: true,
             loadImageUrl: true,
+            pickupMapsUrl: true,
+            deliveryMapsUrl: true,
           },
         },
         driver: {
