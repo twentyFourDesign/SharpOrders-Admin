@@ -37,7 +37,7 @@ export async function GET(request: Request) {
       include: {
         bids: {
           where: { driverId },
-          select: { id: true, status: true },
+          select: { id: true, status: true, offerAmount: true },
         },
       },
     });
@@ -55,6 +55,8 @@ export async function GET(request: Request) {
         loadImageUrl: load.loadImageUrl ?? null,
         appliedByMe: !!myBid,
         myBidStatus: myBid?.status ?? null, // null | 'pending' | 'accepted' | 'rejected'
+        myBidId: myBid?.id ?? null,
+        myBidOfferAmount: myBid?.offerAmount ?? null,
         pickupMapsUrl: (load as any).pickupMapsUrl ?? null,
         deliveryMapsUrl: (load as any).deliveryMapsUrl ?? null,
       };

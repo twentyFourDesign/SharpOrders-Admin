@@ -36,7 +36,7 @@ export async function GET(request: Request, context: Params) {
       include: {
         bids: {
           where: { driverId },
-          select: { id: true, status: true },
+          select: { id: true, status: true, offerAmount: true },
         },
       },
     });
@@ -57,6 +57,8 @@ export async function GET(request: Request, context: Params) {
       loadImageUrl: load.loadImageUrl ?? null,
       appliedByMe: !!myBid,
       myBidStatus: myBid?.status ?? null,
+      myBidId: myBid?.id ?? null,
+      myBidOfferAmount: myBid?.offerAmount ?? null,
     };
 
     return NextResponse.json(result);

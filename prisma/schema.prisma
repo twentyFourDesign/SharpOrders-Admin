@@ -69,6 +69,7 @@ model Profile {
   profilePhotoUrl  String? @map("profile_photo_url")
   licenseImageUrl  String? @map("license_image_url")
   truckPhotoUrl    String? @map("truck_photo_url")
+  truckImageUrls   Json?   @map("truck_image_urls") // array of image URLs (driver truck photos)
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
