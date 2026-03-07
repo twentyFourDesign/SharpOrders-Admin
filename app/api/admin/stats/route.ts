@@ -52,6 +52,56 @@ export async function GET(request: Request) {
     where: { createdAt: { gte: thirtyDaysAgo } },
   });
 
+  // Command center: fleet (online vs offline, by truck type and status)
+  const [driverProfiles, presenceList] = await Promise.all([
+    prisma.profile.findMany({
+      where: { userType: "driver" },
+      select: { id: true, truckType: true },
+    }),
+    prisma.driverPresence.findMany({ select: { driverId: true, status: true } }),
+  ]);
+  const presenceByDriver = new Map(presenceList.map((p) => [p.driverId, p.status]));
+  const onlineCount = presenceByDriver.size;
+  const fleetByTruckType: Record<string, { total: number; idle: number; enRouteOrLoaded: number }> = {};
+  for (const d of driverProfiles) {
+    const truckType = d.truckType?.trim() || "Other";
+    if (!fleetByTruckType[truckType]) fleetByTruckType[truckType] = { total: 0, idle: 0, enRouteOrLoaded: 0 };
+    fleetByTruckType[truckType].total += 1;
+    const status = presenceByDriver.get(d.id);
+    if (status === "available") fleetByTruckType[truckType].idle += 1;
+    else if (status === "busy") fleetByTruckType[truckType].enRouteOrLoaded += 1;
+  }
+
+  // GMV = total value of freight moved (successful payments in naira)
+  const gmv = totalRevenue;
+
+  // Driver payouts (total credits to wallets, in kobo -> naira)
+  const driverPayoutsAgg = await prisma.walletTransaction.aggregate({
+    _sum: { amount: true },
+    where: { type: "credit", status: "success" },
+  });
+  const driverPayoutsNaira = Math.round((driverPayoutsAgg._sum.amount ?? 0) / 100);
+  const platformTake = Math.max(0, totalRevenue - driverPayoutsNaira);
+
+  // Outstanding payouts (wallet balances waiting to be withdrawn; assume kobo)
+  const outstandingAgg = await prisma.wallet.aggregate({
+    _sum: { balance: true },
+  });
+  const outstandingPayoutsNaira = Math.round((outstandingAgg._sum.balance ?? 0) / 100);
+
+  // Volume by cargo/truck type (delivered loads grouped by truckType)
+  const deliveredLoadsByType = await prisma.load.groupBy({
+    by: ["truckType"],
+    where: { status: "delivered" },
+    _count: { id: true },
+  });
+  const totalDelivered = deliveredLoadsByType.reduce((s, r) => s + r._count.id, 0);
+  const volumeByCargoCategory = deliveredLoadsByType.map((r) => ({
+    category: r.truckType,
+    count: r._count.id,
+    percentage: totalDelivered > 0 ? Math.round((r._count.id / totalDelivered) * 100) : 0,
+  }));
+
   const body = {
     users: { total: totalUsers, shippers, drivers, newLast30d: newUsersLast30d },
     loads: { total: totalLoads, active: activeLoads },
@@ -59,6 +109,19 @@ export async function GET(request: Request) {
     bids: { total: totalBids, pending: pendingBids, accepted: acceptedBids },
     payments: { total: totalPayments, successful: successfulPayments, totalRevenue },
     support: { openTickets },
+    commandCenter: {
+      liveActiveOrders: activeShipments,
+      fleet: {
+        totalDrivers: drivers,
+        online: onlineCount,
+        offline: Math.max(0, drivers - onlineCount),
+        byTruckType: fleetByTruckType,
+      },
+      gmv,
+      platformTakeRate: platformTake,
+      outstandingPayouts: outstandingPayoutsNaira,
+      volumeByCargoCategory,
+    },
   };
   return NextResponse.json(body, {
     headers: { "Cache-Control": "private, max-age=30, stale-while-revalidate=60" },

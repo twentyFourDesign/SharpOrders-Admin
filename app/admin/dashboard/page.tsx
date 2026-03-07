@@ -17,6 +17,7 @@ import {
   Bar,
 } from "recharts";
 
+type FleetByTruckType = Record<string, { total: number; idle: number; enRouteOrLoaded: number }>;
 type Stats = {
   users: { total: number; shippers: number; drivers: number; newLast30d: number };
   loads: { total: number; active: number };
@@ -24,6 +25,14 @@ type Stats = {
   bids: { total: number; pending: number; accepted: number };
   payments: { total: number; successful: number; totalRevenue: number };
   support: { openTickets: number };
+  commandCenter?: {
+    liveActiveOrders: number;
+    fleet: { totalDrivers: number; online: number; offline: number; byTruckType: FleetByTruckType };
+    gmv: number;
+    platformTakeRate: number;
+    outstandingPayouts: number;
+    volumeByCargoCategory: { category: string; count: number; percentage: number }[];
+  };
 };
 
 function formatCurrency(n: number) {
@@ -120,6 +129,14 @@ export default function AdminDashboardPage() {
     payments: { total: 0, successful: 0, totalRevenue: 0 },
     support: { openTickets: 0 },
   };
+  const cc = s.commandCenter ?? {
+    liveActiveOrders: 0,
+    fleet: { totalDrivers: 0, online: 0, offline: 0, byTruckType: {} as FleetByTruckType },
+    gmv: 0,
+    platformTakeRate: 0,
+    outstandingPayouts: 0,
+    volumeByCargoCategory: [],
+  };
 
   return (
     <div className="p-6 md:p-8 space-y-6 bg-gray-50">
@@ -137,7 +154,79 @@ export default function AdminDashboardPage() {
           Refresh now
         </button>
       </div>
-      {/* KPI cards - white, rounded, border */}
+
+      {/* Command Center — Real-Time Operations */}
+      <div className="bg-slate-800 rounded-xl border border-slate-700 p-6 text-white">
+        <h2 className="text-lg font-bold text-white mb-4">The Command Center — Real-Time Operations</h2>
+        <p className="text-slate-300 text-sm mb-6">Vital signs of the logistics network. View at a glance to identify immediate bottlenecks.</p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
+          <div className="bg-slate-700/50 rounded-lg p-4">
+            <p className="text-slate-400 text-xs font-medium uppercase tracking-wider">Live Active Orders</p>
+            <p className="mt-1 text-2xl font-bold text-white">{cc.liveActiveOrders}</p>
+            <p className="text-slate-400 text-xs mt-0.5">In transit, loading, or unloading</p>
+          </div>
+          <div className="bg-slate-700/50 rounded-lg p-4">
+            <p className="text-slate-400 text-xs font-medium uppercase tracking-wider">Fleet online</p>
+            <p className="mt-1 text-2xl font-bold text-emerald-400">{cc.fleet.online}</p>
+            <p className="text-slate-400 text-xs mt-0.5">of {cc.fleet.totalDrivers} drivers · {cc.fleet.offline} offline</p>
+          </div>
+          <div className="bg-slate-700/50 rounded-lg p-4">
+            <p className="text-slate-400 text-xs font-medium uppercase tracking-wider">GMV</p>
+            <p className="mt-1 text-2xl font-bold text-white">{formatCurrency(cc.gmv)}</p>
+            <p className="text-slate-400 text-xs mt-0.5">Total freight value moved</p>
+          </div>
+          <div className="bg-slate-700/50 rounded-lg p-4">
+            <p className="text-slate-400 text-xs font-medium uppercase tracking-wider">Platform take</p>
+            <p className="mt-1 text-2xl font-bold text-amber-400">{formatCurrency(cc.platformTakeRate)}</p>
+            <p className="text-slate-400 text-xs mt-0.5">Revenue after driver payouts</p>
+          </div>
+          <div className="bg-slate-700/50 rounded-lg p-4">
+            <p className="text-slate-400 text-xs font-medium uppercase tracking-wider">Outstanding Payouts</p>
+            <p className="mt-1 text-2xl font-bold text-blue-300">{formatCurrency(cc.outstandingPayouts)}</p>
+            <p className="text-slate-400 text-xs mt-0.5">Pending to drivers</p>
+          </div>
+          <div className="bg-slate-700/50 rounded-lg p-4">
+            <p className="text-slate-400 text-xs font-medium uppercase tracking-wider">Open tickets</p>
+            <p className="mt-1 text-2xl font-bold text-white">{s.support.openTickets}</p>
+          </div>
+        </div>
+
+        {/* Fleet by vehicle class */}
+        <div className="mb-6">
+          <h3 className="text-sm font-semibold text-slate-200 mb-3">Live Fleet Status by vehicle class</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+            {Object.entries(cc.fleet.byTruckType).map(([truckType, data]) => (
+              <div key={truckType} className="bg-slate-700/50 rounded-lg p-3">
+                <p className="font-medium text-white">{truckType}</p>
+                <p className="text-slate-400 text-xs mt-1">Total: {data.total} · Idle: {data.idle} · En route / Loaded: {data.enRouteOrLoaded}</p>
+              </div>
+            ))}
+            {Object.keys(cc.fleet.byTruckType).length === 0 && (
+              <p className="text-slate-500 text-sm col-span-full">No fleet data yet</p>
+            )}
+          </div>
+        </div>
+
+        {/* Volume by cargo category */}
+        <div>
+          <h3 className="text-sm font-semibold text-slate-200 mb-3">Volume by cargo / truck type</h3>
+          <div className="flex flex-wrap gap-3">
+            {cc.volumeByCargoCategory.map(({ category, count, percentage }) => (
+              <div key={category} className="bg-slate-700/50 rounded-lg px-4 py-2 flex items-center gap-3">
+                <span className="font-medium text-white">{category}</span>
+                <span className="text-slate-400 text-sm">{percentage}%</span>
+                <span className="text-slate-500 text-xs">({count} delivered)</span>
+              </div>
+            ))}
+            {cc.volumeByCargoCategory.length === 0 && (
+              <p className="text-slate-500 text-sm">No volume data yet</p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Legacy KPI cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
           <p className="text-sm font-medium text-gray-500">Total active loads</p>
@@ -148,7 +237,7 @@ export default function AdminDashboardPage() {
           <p className="mt-1 text-2xl font-bold text-gray-900">{s.shipments.active.toLocaleString()}</p>
         </div>
         <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-          <p className="text-sm font-medium text-gray-500">Total Earnings and Payouts</p>
+          <p className="text-sm font-medium text-gray-500">Total revenue (GMV)</p>
           <p className="mt-1 text-2xl font-bold text-gray-900">{formatCurrency(s.payments.totalRevenue)}</p>
         </div>
         <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
