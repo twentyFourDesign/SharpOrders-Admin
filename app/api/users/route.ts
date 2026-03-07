@@ -29,6 +29,9 @@ export async function POST(request: Request) {
     truckType,
     licenseNumber,
     profilePhotoUrl,
+    bankName,
+    bankAccountName,
+    bankAccountNumber,
   } = body as {
     businessName?: string | null;
     phone?: string | null;
@@ -38,6 +41,9 @@ export async function POST(request: Request) {
     truckType?: string | null;
     licenseNumber?: string | null;
     profilePhotoUrl?: string | null;
+    bankName?: string | null;
+    bankAccountName?: string | null;
+    bankAccountNumber?: string | null;
   };
 
   // Update core auth user record
@@ -54,21 +60,29 @@ export async function POST(request: Request) {
     },
   });
 
+  const profileData: Record<string, unknown> = {
+    businessName: businessName ?? undefined,
+    phone: phone ?? undefined,
+    firstName: firstName ?? undefined,
+    lastName: lastName ?? undefined,
+    phoneNumber: phoneNumber ?? undefined,
+    truckType: truckType ?? undefined,
+    licenseNumber: licenseNumber ?? undefined,
+    profilePhotoUrl: profilePhotoUrl ?? undefined,
+    bankName: bankName ?? undefined,
+    bankAccountName: bankAccountName ?? undefined,
+    bankAccountNumber: bankAccountNumber ?? undefined,
+  };
+  if (bankName !== undefined || bankAccountName !== undefined || bankAccountNumber !== undefined) {
+    profileData.bankDetailsUpdatedAt = new Date();
+  }
+
   // Keep the Profile row in sync so shipment / load relations
   // can reliably read shipper/driver display details.
   try {
     await prisma.profile.update({
       where: { id: payload.sub },
-      data: {
-        businessName: businessName ?? undefined,
-        phone: phone ?? undefined,
-        firstName: firstName ?? undefined,
-        lastName: lastName ?? undefined,
-        phoneNumber: phoneNumber ?? undefined,
-        truckType: truckType ?? undefined,
-        licenseNumber: licenseNumber ?? undefined,
-        profilePhotoUrl: profilePhotoUrl ?? undefined,
-      },
+      data: profileData as Parameters<typeof prisma.profile.update>[0]["data"],
     });
   } catch {
     // If the profile row is missing or schema is slightly different,

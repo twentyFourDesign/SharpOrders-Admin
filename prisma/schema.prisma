@@ -83,18 +83,24 @@ model Profile {
   truckPhotoUrl    String? @map("truck_photo_url")
   truckImageUrls   Json?   @map("truck_image_urls") // array of image URLs (driver truck photos)
 
+  bankName             String?   @map("bank_name")
+  bankAccountName      String?   @map("bank_account_name")
+  bankAccountNumber    String?   @map("bank_account_number")
+  bankDetailsUpdatedAt DateTime? @map("bank_details_updated_at")
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  loads          Load[]          @relation("ShipperLoads")
-  bids           Bid[]           @relation("DriverBids")
-  shipments      Shipment[]      @relation("DriverShipments")
-  shipped        Shipment[]      @relation("ShipperShipments")
-  driverPresence DriverPresence? @relation("DriverPresenceProfile")
-  pushTokens     PushToken[]     @relation("PushTokenProfile")
-  wallet         Wallet?         @relation("DriverWallet")
-  notifications  Notification[]  @relation("UserNotifications")
-  supportTickets SupportTicket[] @relation("UserTickets")
+  loads              Load[]              @relation("ShipperLoads")
+  bids               Bid[]               @relation("DriverBids")
+  shipments          Shipment[]          @relation("DriverShipments")
+  shipped            Shipment[]          @relation("ShipperShipments")
+  driverPresence     DriverPresence?     @relation("DriverPresenceProfile")
+  pushTokens         PushToken[]         @relation("PushTokenProfile")
+  wallet             Wallet?             @relation("DriverWallet")
+  withdrawalRequests WithdrawalRequest[] @relation("DriverWithdrawalRequests")
+  notifications      Notification[]      @relation("UserNotifications")
+  supportTickets     SupportTicket[]     @relation("UserTickets")
 
   @@map("profiles")
 }
@@ -304,6 +310,38 @@ model WalletTransaction {
 
   @@index([walletId])
   @@map("wallet_transactions")
+}
+
+enum WithdrawalRequestStatus {
+  pending
+  processing
+  completed
+  rejected
+}
+
+model WithdrawalRequest {
+  id                   String                   @id @default(uuid()) @db.Uuid
+  driverId             String                   @db.Uuid @map("driver_id")
+  amount               Int                      // in kobo (same as wallet)
+  status               WithdrawalRequestStatus @default(pending)
+  bankName             String                  @map("bank_name")
+  bankAccountName      String                  @map("bank_account_name")
+  bankAccountNumber    String                  @map("bank_account_number")
+  requestedAt          DateTime                @default(now()) @map("requested_at")
+  bankReferenceNumber  String?                 @map("bank_reference_number")
+  proofOfPaymentUrl    String?                 @map("proof_of_payment_url")
+  internalNotes        String?                 @map("internal_notes")
+  rejectionReason      String?                 @map("rejection_reason")
+  processedAt          DateTime?               @map("processed_at")
+  processedByAdminId   String?                 @db.Uuid @map("processed_by_admin_id")
+  riskBankDetailsRecent Boolean                @default(false) @map("risk_bank_details_recent")
+  riskUnusuallyLarge   Boolean                 @default(false) @map("risk_unusually_large")
+
+  driver Profile @relation("DriverWithdrawalRequests", fields: [driverId], references: [id])
+
+  @@index([driverId])
+  @@index([status])
+  @@map("withdrawal_requests")
 }
 
 model Notification {

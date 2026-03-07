@@ -2,12 +2,13 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyAuthToken } from "@/lib/jwt";
 
-// POST /api/driver/wallet/withdraw  body: { amount: number }
+const UNUSUALLY_LARGE_THRESHOLD_KOBO = 500_000_00; // ₦500,000
+const BANK_DETAILS_RECENT_HOURS = 24;
+
+// POST /api/driver/wallet/withdraw  body: { amount: number } (amount in naira; stored as kobo)
 export async function POST(request: Request) {
   const authHeader = request.headers.get("authorization");
-  const token = authHeader?.startsWith("Bearer ")
-    ? authHeader.slice("Bearer ".length)
-    : null;
+  const token = authHeader?.startsWith("Bearer ") ? authHeader.slice("Bearer ".length) : null;
 
   if (!token) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -19,80 +20,96 @@ export async function POST(request: Request) {
   }
 
   const driverId = payload.sub;
-  const body = await request.json();
-  const amount = Number(body?.amount);
-
-  if (!amount || amount <= 0) {
-    return NextResponse.json(
-      { error: "A valid amount is required" },
-      { status: 400 },
-    );
+  const body = await request.json().catch(() => ({}));
+  const amountNaira = Number(body?.amount);
+  if (!amountNaira || amountNaira <= 0) {
+    return NextResponse.json({ error: "A valid amount is required" }, { status: 400 });
   }
+  const amountKobo = Math.round(amountNaira * 100);
 
-  // Get or create wallet
-  let wallet = await (prisma as any).wallet.findUnique({
-    where: { driverId },
+  const profile = await prisma.profile.findUnique({
+    where: { id: driverId },
+    select: {
+      bankName: true,
+      bankAccountName: true,
+      bankAccountNumber: true,
+      bankDetailsUpdatedAt: true,
+    },
   });
 
-  if (!wallet) {
-    wallet = await (prisma as any).wallet.create({
-      data: { driverId, balance: 0 },
-    });
-  }
-
-  if (wallet.balance < amount) {
+  if (!profile?.bankName?.trim() || !profile?.bankAccountName?.trim() || !profile?.bankAccountNumber?.trim()) {
     return NextResponse.json(
-      { error: "Insufficient balance" },
+      { error: "Please add your bank details in Profile before requesting a withdrawal." },
       { status: 400 },
     );
   }
 
-  const reference = `wdw_${driverId}_${Date.now()}`;
+  const wallet = await prisma.wallet.findUnique({
+    where: { driverId },
+  });
+  if (!wallet) {
+    return NextResponse.json({ error: "Wallet not found" }, { status: 404 });
+  }
+  if (wallet.balance < amountKobo) {
+    return NextResponse.json({ error: "Insufficient balance" }, { status: 400 });
+  }
 
-  // Deduct balance and record transaction
-  await (prisma as any).$transaction([
-    (prisma as any).wallet.update({
+  const bankUpdatedAt = profile.bankDetailsUpdatedAt ?? new Date(0);
+  const riskBankDetailsRecent =
+    Date.now() - bankUpdatedAt.getTime() < BANK_DETAILS_RECENT_HOURS * 60 * 60 * 1000;
+  const riskUnusuallyLarge = amountKobo >= UNUSUALLY_LARGE_THRESHOLD_KOBO;
+
+  const withdrawalRequest = await prisma.$transaction(async (tx) => {
+    const wr = await tx.withdrawalRequest.create({
+      data: {
+        driverId,
+        amount: amountKobo,
+        status: "pending",
+        bankName: profile.bankName.trim(),
+        bankAccountName: profile.bankAccountName.trim(),
+        bankAccountNumber: profile.bankAccountNumber.trim(),
+        riskBankDetailsRecent,
+        riskUnusuallyLarge,
+      },
+    });
+    await tx.wallet.update({
       where: { driverId },
-      data: { balance: { decrement: amount } },
-    }),
-    (prisma as any).walletTransaction.create({
+      data: { balance: { decrement: amountKobo } },
+    });
+    await tx.walletTransaction.create({
       data: {
         walletId: wallet.id,
         type: "debit",
-        amount,
-        description: "Withdrawal",
-        status: "success",
-        reference,
+        amount: amountKobo,
+        description: "Withdrawal (pending approval)",
+        status: "pending",
+        reference: `wd_${wr.id}`,
       },
-    }),
-  ]);
+    });
+    return wr;
+  });
 
-  // Create notification so the driver sees wallet activity
   try {
-    await (prisma as any).notification.create({
+    await prisma.notification.create({
       data: {
         userId: driverId,
         type: "withdrawal",
         title: "Withdrawal requested",
-        message: `You requested a withdrawal of ₦${amount.toLocaleString()}.`,
-        data: { amount, reference },
+        message: `You requested ₦${amountNaira.toLocaleString()}. It will be processed by the admin.`,
+        data: { amount: amountNaira },
       },
     });
-  } catch (e) {
-    console.error("[wallet/withdraw] failed to create notification", e);
+  } catch {
+    // ignore
   }
 
-  // Fetch updated wallet
-  const updated = await (prisma as any).wallet.findUnique({
+  const updated = await prisma.wallet.findUnique({
     where: { driverId },
-    include: {
-      transactions: { orderBy: { createdAt: "desc" }, take: 50 },
-    },
+    select: { balance: true },
   });
 
   return NextResponse.json({
-    balance: updated.balance,
-    transactions: updated.transactions,
-    reference,
+    balance: updated?.balance ?? 0,
+    message: "Withdrawal request submitted. You will be notified when it is processed.",
   });
 }
