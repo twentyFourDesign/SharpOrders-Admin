@@ -28,20 +28,27 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true);
   const LIMIT = 20;
 
-  const fetchUsers = useCallback(async () => {
-    setLoading(true);
+  const fetchUsers = useCallback(async (showLoading = true) => {
+    if (showLoading) setLoading(true);
     const token = localStorage.getItem("admin_token");
     const params = new URLSearchParams({ page: String(page), limit: String(LIMIT) });
     if (role) params.set("role", role);
     if (search) params.set("search", search);
-    const res = await fetch(`/api/admin/users?${params}`, { headers: { Authorization: `Bearer ${token}` } });
+    const res = await fetch(`/api/admin/users?${params}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    });
     const data = await res.json();
     setUsers(data.users ?? []);
     setTotal(data.total ?? 0);
     setLoading(false);
   }, [page, role, search]);
 
-  useEffect(() => { fetchUsers(); }, [fetchUsers]);
+  useEffect(() => {
+    fetchUsers();
+    const interval = setInterval(() => fetchUsers(false), 30_000);
+    return () => clearInterval(interval);
+  }, [fetchUsers]);
 
   function displayName(u: User) {
     if (u.businessName) return u.businessName;
@@ -51,9 +58,12 @@ export default function AdminUsersPage() {
 
   return (
     <div className="p-6 md:p-8 space-y-6 bg-gray-50">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Users</h1>
-        <p className="text-gray-500 text-sm mt-1">{total.toLocaleString()} total registered users</p>
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Users</h1>
+          <p className="text-gray-500 text-sm mt-1">{total.toLocaleString()} total · refreshes every 30s</p>
+        </div>
+        <button type="button" onClick={() => fetchUsers()} className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition">Refresh</button>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3">

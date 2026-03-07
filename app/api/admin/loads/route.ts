@@ -44,19 +44,22 @@ export async function GET(request: Request) {
       prisma.load.count({ where }),
     ]);
 
-    return NextResponse.json({
-      loads: loads.map((l) => ({
-        ...l,
-        offerAmount: l.fareOffer,
-        pickupCity: l.pickupAddress,
-        deliveryCity: l.deliveryAddress,
-        pickupState: null,
-        deliveryState: null,
-      })),
-      total,
-      page,
-      limit,
-    });
+    return NextResponse.json(
+      {
+        loads: loads.map((l) => ({
+          ...l,
+          offerAmount: l.fareOffer,
+          pickupCity: l.pickupAddress,
+          deliveryCity: l.deliveryAddress,
+          pickupState: null,
+          deliveryState: null,
+        })),
+        total,
+        page,
+        limit,
+      },
+      { headers: { "Cache-Control": "private, max-age=30, stale-while-revalidate=60" } }
+    );
   } catch (e) {
     return NextResponse.json(
       { error: e instanceof Error ? e.message : "Failed to fetch loads" },

@@ -30,25 +30,35 @@ export default function AdminBidsPage() {
   const [loading, setLoading] = useState(true);
   const LIMIT = 20;
 
-  const fetchBids = useCallback(async () => {
-    setLoading(true);
+  const fetchBids = useCallback(async (showLoading = true) => {
+    if (showLoading) setLoading(true);
     const token = localStorage.getItem("admin_token");
     const params = new URLSearchParams({ page: String(page), limit: String(LIMIT) });
     if (status) params.set("status", status);
-    const res = await fetch(`/api/admin/bids?${params}`, { headers: { Authorization: `Bearer ${token}` } });
+    const res = await fetch(`/api/admin/bids?${params}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    });
     const data = await res.json();
     setBids(data.bids ?? []);
     setTotal(data.total ?? 0);
     setLoading(false);
   }, [page, status]);
 
-  useEffect(() => { fetchBids(); }, [fetchBids]);
+  useEffect(() => {
+    fetchBids();
+    const interval = setInterval(() => fetchBids(false), 30_000);
+    return () => clearInterval(interval);
+  }, [fetchBids]);
 
   return (
     <div className="p-6 md:p-8 space-y-6 bg-gray-50">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Bids</h1>
-        <p className="text-gray-500 text-sm mt-1">{total.toLocaleString()} total bids</p>
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Bids</h1>
+          <p className="text-gray-500 text-sm mt-1">{total.toLocaleString()} total · refreshes every 30s</p>
+        </div>
+        <button type="button" onClick={() => fetchBids()} className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition">Refresh</button>
       </div>
 
       <div className="flex gap-3">

@@ -52,12 +52,15 @@ export async function GET(request: Request) {
     where: { createdAt: { gte: thirtyDaysAgo } },
   });
 
-  return NextResponse.json({
+  const body = {
     users: { total: totalUsers, shippers, drivers, newLast30d: newUsersLast30d },
     loads: { total: totalLoads, active: activeLoads },
     shipments: { total: totalShipments, active: activeShipments, delivered: deliveredShipments },
     bids: { total: totalBids, pending: pendingBids, accepted: acceptedBids },
     payments: { total: totalPayments, successful: successfulPayments, totalRevenue },
     support: { openTickets },
+  };
+  return NextResponse.json(body, {
+    headers: { "Cache-Control": "private, max-age=30, stale-while-revalidate=60" },
   });
 }

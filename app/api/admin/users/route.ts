@@ -44,5 +44,8 @@ export async function GET(request: Request) {
     prisma.appUser.count({ where }),
   ]);
 
-  return NextResponse.json({ users, total, page, limit });
+  return NextResponse.json(
+    { users, total, page, limit },
+    { headers: { "Cache-Control": "private, max-age=30, stale-while-revalidate=60" } }
+  );
 }

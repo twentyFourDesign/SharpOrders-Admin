@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   LineChart,
   Line,
@@ -45,10 +45,11 @@ const TRIP_REVENUE_DATA = [
   { month: "Aug", revenue: 1 },
 ];
 
+// Revenue split: 70% platform/shipper, 20% driver earnings, 10% service fee
 const REVENUE_SPLIT_DATA = [
-  { name: "Services Fee", value: 70, color: "#1e3a5f" },
+  { name: "Platform / Shipper", value: 70, color: "#1e3a5f" },
   { name: "Driver Earnings", value: 20, color: "#3b82f6" },
-  { name: "Driver Earnings (bonus)", value: 10, color: "#93c5fd" },
+  { name: "Service Fee", value: 10, color: "#10b981" },
 ];
 
 const TRIPS_COMPLETED_DATA = [
@@ -68,19 +69,40 @@ const REPORT_HISTORY = [
   { month: "Apr", revenue: "₦180,000", profit: "₦180,000", service: "₦180,000", driverPayout: "₦180,000", trips: 60 },
 ];
 
+const REFRESH_INTERVAL_MS = 30_000; // 30 seconds
+
 export default function AdminDashboardPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [revenueFilter, setRevenueFilter] = useState<"Monthly" | "Quarterly" | "Yearly">("Monthly");
 
-  useEffect(() => {
+  const fetchStats = useCallback(async () => {
     const token = localStorage.getItem("admin_token");
-    fetch("/api/admin/stats", { headers: { Authorization: `Bearer ${token}` } })
-      .then((r) => r.json())
-      .then((d) => setStats(d))
-      .catch(() => setStats(null))
-      .finally(() => setLoading(false));
+    const res = await fetch("/api/admin/stats", {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    });
+    const d = await res.json().catch(() => ({}));
+    setStats(d.users !== undefined ? d : null);
+    setLastUpdated(new Date());
   }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      setLoading(true);
+      await fetchStats();
+      if (mounted) setLoading(false);
+    })();
+    const interval = setInterval(() => {
+      fetchStats();
+    }, REFRESH_INTERVAL_MS);
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, [fetchStats]);
 
   if (loading) {
     return (
@@ -101,22 +123,33 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="p-6 md:p-8 space-y-6 bg-gray-50">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          {lastUpdated && (
+            <p className="text-gray-500 text-xs">Data refreshes every 30s · Last updated {lastUpdated.toLocaleTimeString("en-NG")}</p>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={() => fetchStats()}
+          className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
+        >
+          Refresh now
+        </button>
+      </div>
       {/* KPI cards - white, rounded, border */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
           <p className="text-sm font-medium text-gray-500">Total active loads</p>
           <p className="mt-1 text-2xl font-bold text-gray-900">{s.loads.active.toLocaleString()}</p>
-          <p className="mt-1 text-sm text-green-600">+2.5%</p>
         </div>
         <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
           <p className="text-sm font-medium text-gray-500">Ongoing Trips</p>
           <p className="mt-1 text-2xl font-bold text-gray-900">{s.shipments.active.toLocaleString()}</p>
-          <p className="mt-1 text-sm text-green-600">+2.5%</p>
         </div>
         <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
           <p className="text-sm font-medium text-gray-500">Total Earnings and Payouts</p>
           <p className="mt-1 text-2xl font-bold text-gray-900">{formatCurrency(s.payments.totalRevenue)}</p>
-          <p className="mt-1 text-sm text-red-600">+2.5% 1% last year</p>
         </div>
         <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
           <p className="text-sm font-medium text-gray-500">Open Support Tickets</p>

@@ -38,5 +38,8 @@ export async function GET(request: Request) {
     prisma.bid.count({ where }),
   ]);
 
-  return NextResponse.json({ bids, total, page, limit });
+  return NextResponse.json(
+    { bids, total, page, limit },
+    { headers: { "Cache-Control": "private, max-age=30, stale-while-revalidate=60" } }
+  );
 }
