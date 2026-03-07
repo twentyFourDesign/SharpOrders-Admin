@@ -71,7 +71,7 @@ export async function GET(
     type: "adjustment",
     description: "Platform commission (10%)",
     amountNaira: -Math.round(platformDeduction / 100),
-    date: null,
+    date: withdrawal.requestedAt,
   });
 
   return NextResponse.json({

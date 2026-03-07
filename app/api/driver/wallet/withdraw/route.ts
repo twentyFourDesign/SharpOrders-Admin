@@ -44,6 +44,10 @@ export async function POST(request: Request) {
     );
   }
 
+  const bankName = profile.bankName.trim();
+  const bankAccountName = profile.bankAccountName.trim();
+  const bankAccountNumber = profile.bankAccountNumber.trim();
+
   const wallet = await prisma.wallet.findUnique({
     where: { driverId },
   });
@@ -65,9 +69,9 @@ export async function POST(request: Request) {
         driverId,
         amount: amountKobo,
         status: "pending",
-        bankName: profile.bankName.trim(),
-        bankAccountName: profile.bankAccountName.trim(),
-        bankAccountNumber: profile.bankAccountNumber.trim(),
+        bankName,
+        bankAccountName,
+        bankAccountNumber,
         riskBankDetailsRecent,
         riskUnusuallyLarge,
       },
