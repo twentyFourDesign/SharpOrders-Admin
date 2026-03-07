@@ -18,7 +18,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const tickets = await (prisma as any).supportTicket.findMany({
+  const tickets = await prisma.supportTicket.findMany({
     where: { userId: payload.sub },
     orderBy: { createdAt: "desc" },
   });
@@ -52,7 +52,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const ticket = await (prisma as any).supportTicket.create({
+  const ticket = await prisma.supportTicket.create({
     data: {
       userId: payload.sub,
       title: title.trim(),

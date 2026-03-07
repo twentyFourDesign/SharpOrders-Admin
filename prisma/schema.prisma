@@ -326,10 +326,24 @@ model SupportTicket {
   createdAt   DateTime     @default(now()) @map("created_at")
   updatedAt   DateTime     @updatedAt @map("updated_at")
 
-  user Profile @relation("UserTickets", fields: [userId], references: [id])
+  user    Profile             @relation("UserTickets", fields: [userId], references: [id])
+  replies SupportTicketReply[]
 
   @@index([userId])
   @@map("support_tickets")
+}
+
+model SupportTicketReply {
+  id        String        @id @default(uuid()) @db.Uuid
+  ticketId  String        @db.Uuid @map("ticket_id")
+  message   String
+  isFromStaff Boolean     @default(false) @map("is_from_staff")
+  createdAt DateTime     @default(now()) @map("created_at")
+
+  ticket SupportTicket @relation(fields: [ticketId], references: [id])
+
+  @@index([ticketId])
+  @@map("support_ticket_replies")
 }
 
 // ─── Admin ───────────────────────────────────────────────────────────────────

@@ -17,6 +17,15 @@ export default function AdminSettingsPage() {
   const [pwError, setPwError] = useState<string | null>(null);
   const [pwSuccess, setPwSuccess] = useState(false);
 
+  // Create admin state (super admin only)
+  const [createEmail, setCreateEmail] = useState("");
+  const [createPassword, setCreatePassword] = useState("");
+  const [createConfirmPassword, setCreateConfirmPassword] = useState("");
+  const [createName, setCreateName] = useState("");
+  const [createLoading, setCreateLoading] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [createSuccess, setCreateSuccess] = useState(false);
+
   useEffect(() => {
     const token = localStorage.getItem("admin_token");
     fetch("/api/admin/auth/me", { headers: { Authorization: `Bearer ${token}` } })
@@ -41,6 +50,38 @@ export default function AdminSettingsPage() {
     if (!res.ok) { setPwError(data.error ?? "Failed to change password"); }
     else { setPwSuccess(true); setCurrentPassword(""); setNewPassword(""); setConfirmPassword(""); }
     setPwLoading(false);
+  }
+
+  async function handleCreateAdmin(e: FormEvent) {
+    e.preventDefault();
+    setCreateError(null);
+    setCreateSuccess(false);
+    if (createPassword !== createConfirmPassword) {
+      setCreateError("Passwords do not match");
+      return;
+    }
+    if (createPassword.length < 8) {
+      setCreateError("Password must be at least 8 characters");
+      return;
+    }
+    setCreateLoading(true);
+    const token = localStorage.getItem("admin_token");
+    const res = await fetch("/api/admin/admins", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ email: createEmail.trim(), password: createPassword, name: createName.trim() || undefined }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setCreateError(data.error ?? "Failed to create admin");
+    } else {
+      setCreateSuccess(true);
+      setCreateEmail("");
+      setCreatePassword("");
+      setCreateConfirmPassword("");
+      setCreateName("");
+    }
+    setCreateLoading(false);
   }
 
   function handleLogout() {
@@ -106,11 +147,35 @@ export default function AdminSettingsPage() {
         </form>
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-3 shadow-sm">
-        <h2 className="text-gray-900 font-semibold">Create additional admin</h2>
-        <p className="text-gray-600 text-sm">To create another admin account, make a <code className="text-blue-600 bg-blue-50 px-1 rounded">POST</code> request to <code className="text-blue-600 bg-blue-50 px-1 rounded">/api/admin/auth/create</code> with <code className="text-blue-600 bg-blue-50 px-1 rounded">bootstrapSecret</code>, <code className="text-blue-600 bg-blue-50 px-1 rounded">email</code>, and <code className="text-blue-600 bg-blue-50 px-1 rounded">password</code>.</p>
-        <p className="text-gray-500 text-xs">Set <code className="text-gray-600 bg-gray-100 px-1 rounded">ADMIN_BOOTSTRAP_SECRET</code> in your environment variables to enable this endpoint.</p>
-      </div>
+      {admin?.isSuperAdmin && (
+        <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+          <h2 className="text-gray-900 font-semibold mb-4">Create admin</h2>
+          <p className="text-gray-600 text-sm mb-4">Create a new admin account. They will be able to log in and manage the dashboard (non–super admin).</p>
+          <form onSubmit={handleCreateAdmin} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
+              <input type="email" required value={createEmail} onChange={(e) => setCreateEmail(e.target.value)} className="w-full px-4 py-2.5 rounded-lg bg-white border border-gray-200 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" placeholder="admin@example.com" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Name (optional)</label>
+              <input type="text" value={createName} onChange={(e) => setCreateName(e.target.value)} className="w-full px-4 py-2.5 rounded-lg bg-white border border-gray-200 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" placeholder="Admin name" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
+              <input type="password" required value={createPassword} onChange={(e) => setCreatePassword(e.target.value)} className="w-full px-4 py-2.5 rounded-lg bg-white border border-gray-200 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Confirm password</label>
+              <input type="password" required value={createConfirmPassword} onChange={(e) => setCreateConfirmPassword(e.target.value)} className="w-full px-4 py-2.5 rounded-lg bg-white border border-gray-200 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
+            </div>
+            {createError && <p className="text-red-600 text-sm">{createError}</p>}
+            {createSuccess && <p className="text-emerald-600 text-sm">Admin created successfully.</p>}
+            <button type="submit" disabled={createLoading} className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-60 text-white font-medium rounded-lg transition text-sm">
+              {createLoading ? "Creating…" : "Create admin"}
+            </button>
+          </form>
+        </div>
+      )}
 
       <div className="bg-red-50 border border-red-200 rounded-xl p-6 space-y-3">
         <h2 className="text-red-700 font-semibold">Sign out</h2>

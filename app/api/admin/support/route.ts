@@ -13,7 +13,7 @@ export async function GET(request: Request) {
   const where: Record<string, unknown> = {};
   if (status) where.status = status;
 
-  const [tickets, total] = await Promise.all([
+  const [ticketsRaw, total] = await Promise.all([
     prisma.supportTicket.findMany({
       where,
       select: {
@@ -23,7 +23,7 @@ export async function GET(request: Request) {
         status: true,
         createdAt: true,
         updatedAt: true,
-        user: { select: { id: true, email: true, businessName: true, firstName: true, lastName: true } },
+        user: { select: { id: true, email: true, userType: true, businessName: true, firstName: true, lastName: true, displayName: true, phone: true, phoneNumber: true } },
       },
       orderBy: { createdAt: "desc" },
       skip: (page - 1) * limit,
@@ -31,6 +31,28 @@ export async function GET(request: Request) {
     }),
     prisma.supportTicket.count({ where }),
   ]);
+
+  const ticketIds = ticketsRaw.map((t) => t.id);
+  const repliesByTicket =
+    ticketIds.length > 0
+      ? await prisma.supportTicketReply.findMany({
+          where: { ticketId: { in: ticketIds } },
+          select: { ticketId: true, id: true, message: true, isFromStaff: true, createdAt: true },
+          orderBy: { createdAt: "asc" },
+        })
+      : [];
+
+  const replyMap = new Map<string, typeof repliesByTicket>();
+  for (const r of repliesByTicket) {
+    const list = replyMap.get(r.ticketId) ?? [];
+    list.push(r);
+    replyMap.set(r.ticketId, list);
+  }
+
+  const tickets = ticketsRaw.map((t) => ({
+    ...t,
+    replies: replyMap.get(t.id) ?? [],
+  }));
 
   return NextResponse.json({ tickets, total, page, limit });
 }
