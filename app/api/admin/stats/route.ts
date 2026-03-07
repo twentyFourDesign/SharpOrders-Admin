@@ -25,9 +25,11 @@ export async function GET(request: Request) {
     prisma.appUser.count({ where: { role: "shipper" } }),
     prisma.appUser.count({ where: { role: "driver" } }),
     prisma.load.count(),
-    prisma.load.count({ where: { status: "active" } }),
+    prisma.load.count({ where: { status: "available" } }),
     prisma.shipment.count(),
-    prisma.shipment.count({ where: { status: "active" } }),
+    prisma.shipment.count({
+      where: { status: { in: ["pending", "picked_up", "in_transit", "approaching_dropoff"] } },
+    }),
     prisma.shipment.count({ where: { status: "delivered" } }),
     prisma.bid.count(),
     prisma.bid.count({ where: { status: "pending" } }),
