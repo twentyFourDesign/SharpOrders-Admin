@@ -35,6 +35,8 @@ export async function GET(request: Request) {
         phone: true,
         phoneNumber: true,
         emailVerified: true,
+        suspendedUntil: true,
+        isBlacklisted: true,
         createdAt: true,
       },
       orderBy: { createdAt: "desc" },

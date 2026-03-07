@@ -40,6 +40,22 @@ export async function POST(request: Request) {
     );
   }
 
+  if (user.isBlacklisted) {
+    return NextResponse.json(
+      { error: "Your account has been blacklisted. Please contact support." },
+      { status: 403 },
+    );
+  }
+
+  if (user.suspendedUntil && new Date(user.suspendedUntil) > new Date()) {
+    return NextResponse.json(
+      {
+        error: `Your account is suspended until ${new Date(user.suspendedUntil).toLocaleString()}. Please contact support.`,
+      },
+      { status: 403 },
+    );
+  }
+
   if (!user.emailVerified) {
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + OTP_EXP_MINUTES * 60 * 1000);
