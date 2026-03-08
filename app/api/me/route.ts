@@ -32,11 +32,20 @@ export async function GET(request: Request) {
   // typings lag behind the actual DB schema (e.g. for truckImageUrls).
   const profile = (await (prisma as any).profile.findUnique({
     where: { id: payload.sub },
-    select: { profilePhotoUrl: true, truckImageUrls: true },
+    select: {
+      profilePhotoUrl: true,
+      truckImageUrls: true,
+      bankName: true,
+      bankAccountName: true,
+      bankAccountNumber: true,
+    },
   })) as
     | {
         profilePhotoUrl?: string | null;
         truckImageUrls?: unknown;
+        bankName?: string | null;
+        bankAccountName?: string | null;
+        bankAccountNumber?: string | null;
       }
     | null;
 
@@ -49,6 +58,9 @@ export async function GET(request: Request) {
     ...user,
     profilePhotoUrl: profile?.profilePhotoUrl ?? null,
     truckImageUrls: truckImageUrlsArray,
+    bankName: profile?.bankName ?? null,
+    bankAccountName: profile?.bankAccountName ?? null,
+    bankAccountNumber: profile?.bankAccountNumber ?? null,
   });
 }
 

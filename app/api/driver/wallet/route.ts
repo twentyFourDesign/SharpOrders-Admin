@@ -106,11 +106,43 @@ export async function GET(request: Request) {
   const platformDeduction = Math.round(totalEarned * 0.1);
   const totalPayout = totalEarned - platformDeduction;
 
+  // For debit transactions with reference wd_<id>, fetch withdrawal details (invoice, bank ref, processed time)
+  const debitRefs = (wallet.transactions as { type?: string; reference?: string | null }[])
+    .filter((t) => t.type === "debit" && t.reference?.startsWith("wd_"))
+    .map((t) => t.reference!.replace("wd_", ""));
+  const withdrawalDetails =
+    debitRefs.length > 0
+      ? await prisma.withdrawalRequest.findMany({
+          where: { id: { in: debitRefs } },
+          select: {
+            id: true,
+            proofOfPaymentUrl: true,
+            bankReferenceNumber: true,
+            processedAt: true,
+          },
+        })
+      : [];
+  const withdrawalByWrId = new Map(withdrawalDetails.map((w) => [w.id, w]));
+
+  const transactionsWithInvoice = (wallet.transactions as { id: string; reference?: string | null; [k: string]: unknown }[]).map(
+    (t) => {
+      const w = t.type === "debit" && t.reference?.startsWith("wd_")
+        ? withdrawalByWrId.get(t.reference.replace("wd_", ""))
+        : null;
+      return {
+        ...t,
+        invoiceUrl: w?.proofOfPaymentUrl ?? undefined,
+        bankReferenceNumber: w?.bankReferenceNumber ?? undefined,
+        processedAt: w?.processedAt ? w.processedAt.toISOString() : undefined,
+      };
+    },
+  );
+
   return NextResponse.json({
     balance: wallet.balance,
     completedTrips,
     platformDeduction,
     totalPayout,
-    transactions: wallet.transactions,
+    transactions: transactionsWithInvoice,
   });
 }

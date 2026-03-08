@@ -58,6 +58,7 @@ export async function GET(
         amount: true,
         processedAt: true,
         bankReferenceNumber: true,
+        proofOfPaymentUrl: true,
       },
     }),
   ]);
@@ -84,6 +85,7 @@ export async function GET(
       bankAccountName: req.bankAccountName,
       bankAccountNumber: req.bankAccountNumber,
       bankReferenceNumber: req.bankReferenceNumber,
+      proofOfPaymentUrl: req.proofOfPaymentUrl ?? null,
       rejectionReason: req.rejectionReason,
       processedAt: req.processedAt,
       riskBankDetailsRecent: req.riskBankDetailsRecent,

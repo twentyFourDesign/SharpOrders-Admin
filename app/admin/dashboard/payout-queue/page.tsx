@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 
-type StatusTab = "pending" | "processing" | "completed" | "rejected";
+type StatusTab = "all" | "pending" | "processing" | "completed" | "rejected";
 
 type PayoutRequest = {
   id: string;
@@ -36,6 +36,7 @@ type DriverContext = {
     bankAccountName: string;
     bankAccountNumber: string;
     bankReferenceNumber: string | null;
+    proofOfPaymentUrl: string | null;
     rejectionReason: string | null;
     processedAt: string | null;
     riskBankDetailsRecent: boolean;
@@ -96,7 +97,7 @@ function CopyButton({ value, label }: { value: string; label: string }) {
         e.stopPropagation();
         copy();
       }}
-      className="inline-flex items-center gap-1 text-gray-400 hover:text-gray-600 ml-1"
+      className="inline-flex items-center gap-1 text-gray-600 hover:text-gray-800 ml-1"
       title={`Copy ${label}`}
     >
       {copied ? (
@@ -118,7 +119,7 @@ function formatDate(iso: string) {
 }
 
 export default function PayoutQueuePage() {
-  const [tab, setTab] = useState<StatusTab>("pending");
+  const [tab, setTab] = useState<StatusTab>("all");
   const [requests, setRequests] = useState<PayoutRequest[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -139,16 +140,21 @@ export default function PayoutQueuePage() {
   const [bulkReconcileOpen, setBulkReconcileOpen] = useState(false);
   const [bulkMasterRef, setBulkMasterRef] = useState("");
   const [bulkReconcileLoading, setBulkReconcileLoading] = useState(false);
+  const [drawerMarkPaidRef, setDrawerMarkPaidRef] = useState("");
+  const [drawerMarkPaidNotes, setDrawerMarkPaidNotes] = useState("");
+  const [drawerInvoiceUrl, setDrawerInvoiceUrl] = useState<string | null>(null);
+  const [drawerInvoiceUploading, setDrawerInvoiceUploading] = useState(false);
+  const [drawerMarkPaidLoading, setDrawerMarkPaidLoading] = useState(false);
   const LIMIT = 20;
 
   const fetchList = useCallback(async () => {
     setLoading(true);
     const token = localStorage.getItem("admin_token");
     const params = new URLSearchParams({
-      status: tab,
       page: String(page),
       limit: String(LIMIT),
     });
+    if (tab !== "all") params.set("status", tab);
     const res = await fetch(`/api/admin/payout-queue?${params}`, {
       headers: { Authorization: `Bearer ${token}` },
       cache: "no-store",
@@ -205,6 +211,48 @@ export default function PayoutQueuePage() {
       headers: { Authorization: `Bearer ${token}` },
     });
     fetchList();
+  }
+
+  async function handleDrawerInvoiceUpload(file: File) {
+    setDrawerInvoiceUploading(true);
+    setDrawerInvoiceUrl(null);
+    const token = localStorage.getItem("admin_token");
+    const form = new FormData();
+    form.set("file", file);
+    const res = await fetch("/api/admin/upload/proof-of-payment", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: form,
+    });
+    const data = await res.json();
+    setDrawerInvoiceUploading(false);
+    if (res.ok && data.url) setDrawerInvoiceUrl(data.url);
+  }
+
+  async function handleDrawerMarkPaid() {
+    if (!drawerRequestId || !drawerMarkPaidRef.trim()) return;
+    setDrawerMarkPaidLoading(true);
+    const token = localStorage.getItem("admin_token");
+    const res = await fetch(`/api/admin/payout-queue/${drawerRequestId}/mark-paid`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        bankReferenceNumber: drawerMarkPaidRef.trim(),
+        internalNotes: drawerMarkPaidNotes.trim() || undefined,
+        proofOfPaymentUrl: drawerInvoiceUrl || undefined,
+      }),
+    });
+    setDrawerMarkPaidLoading(false);
+    if (res.ok) {
+      setDrawerRequestId(null);
+      setDrawerMarkPaidRef("");
+      setDrawerMarkPaidNotes("");
+      setDrawerInvoiceUrl(null);
+      fetchList();
+    }
   }
 
   async function handleProofUpload(file: File) {
@@ -334,21 +382,26 @@ export default function PayoutQueuePage() {
   }
 
   const statusTabs: { key: StatusTab; label: string }[] = [
+    { key: "all", label: "All" },
     { key: "pending", label: "Pending" },
     { key: "processing", label: "Processing" },
     { key: "completed", label: "Completed" },
     { key: "rejected", label: "Rejected" },
   ];
 
+  const showList = !drawerRequestId;
+
   return (
     <div className="p-6 md:p-8 space-y-6 bg-gray-50 min-h-screen">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Payout Queue</h1>
-        <p className="text-gray-500 text-sm mt-1">
+        <p className="text-gray-700 text-sm mt-1">
           Withdrawal requests from drivers · maker-checker approval
         </p>
       </div>
 
+      {showList && (
+      <>
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex rounded-xl overflow-hidden border border-slate-200 bg-white text-sm shadow-sm">
           {statusTabs.map(({ key, label }) => (
@@ -358,7 +411,7 @@ export default function PayoutQueuePage() {
               className={`px-4 py-2.5 font-medium transition ${
                 tab === key
                   ? "bg-blue-600 text-white"
-                  : "text-gray-600 hover:bg-gray-100"
+                  : "text-gray-700 hover:bg-gray-100"
               }`}
             >
               {label}
@@ -367,7 +420,7 @@ export default function PayoutQueuePage() {
         </div>
         {selectedIds.size > 0 && (
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm text-gray-500">
+            <span className="text-sm text-gray-700">
               {selectedIds.size} selected
             </span>
             <button
@@ -391,17 +444,17 @@ export default function PayoutQueuePage() {
       <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           {loading ? (
-            <div className="p-12 text-center text-gray-500">Loading...</div>
+            <div className="p-12 text-center text-gray-700">Loading...</div>
           ) : requests.length === 0 ? (
-            <div className="p-12 text-center text-gray-500">
-              No {tab} withdrawal requests.
+            <div className="p-12 text-center text-gray-700">
+              No {tab === "all" ? "" : tab} withdrawal requests.
             </div>
           ) : (
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-200 bg-gray-50 text-gray-600 text-xs uppercase tracking-wider">
+                <tr className="border-b border-gray-200 bg-gray-100 text-gray-800 text-xs uppercase tracking-wider font-semibold">
                   <th className="text-left px-4 py-3 w-10">
-                    {(tab === "pending" || tab === "processing") && (
+                    {(tab === "all" || tab === "pending" || tab === "processing") && (
                       <input
                         type="checkbox"
                         checked={requests.length > 0 && selectedIds.size === requests.length}
@@ -410,15 +463,13 @@ export default function PayoutQueuePage() {
                       />
                     )}
                   </th>
-                  <th className="text-left px-4 py-3 font-medium">Request ID & Date</th>
-                  <th className="text-left px-4 py-3 font-medium">Driver</th>
-                  <th className="text-left px-4 py-3 font-medium">Amount</th>
-                  <th className="text-left px-4 py-3 font-medium">Bank Details</th>
-                  <th className="text-left px-4 py-3 font-medium">Risk</th>
-                  <th className="text-left px-4 py-3 font-medium">Status</th>
-                  {(tab === "pending" || tab === "processing") && (
-                    <th className="text-right px-4 py-3 font-medium">Actions</th>
-                  )}
+                  <th className="text-left px-4 py-3">Request ID & Date</th>
+                  <th className="text-left px-4 py-3">Driver</th>
+                  <th className="text-left px-4 py-3">Amount</th>
+                  <th className="text-left px-4 py-3">Bank Details</th>
+                  <th className="text-left px-4 py-3">Risk</th>
+                  <th className="text-left px-4 py-3">Status</th>
+                  <th className="text-right px-4 py-3">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -429,7 +480,7 @@ export default function PayoutQueuePage() {
                     className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer"
                   >
                     <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
-                      {(tab === "pending" || tab === "processing") && (
+                      {(tab === "all" || tab === "pending" || tab === "processing") && (
                         <input
                           type="checkbox"
                           checked={selectedIds.has(r.id)}
@@ -439,9 +490,9 @@ export default function PayoutQueuePage() {
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      <span className="font-mono text-xs text-gray-600">{r.id.slice(0, 8)}…</span>
+                      <span className="font-mono text-xs text-gray-800">{r.id.slice(0, 8)}…</span>
                       <br />
-                      <span className="text-gray-500">{formatDate(r.requestedAt)}</span>
+                      <span className="text-gray-700">{formatDate(r.requestedAt)}</span>
                     </td>
                     <td className="px-4 py-3">
                       <Link
@@ -452,7 +503,7 @@ export default function PayoutQueuePage() {
                         {r.driverName}
                       </Link>
                       {r.driverPhone && (
-                        <span className="block text-gray-500 text-xs">{r.driverPhone}</span>
+                        <span className="block text-gray-700 text-xs">{r.driverPhone}</span>
                       )}
                     </td>
                     <td className="px-4 py-3">
@@ -460,10 +511,10 @@ export default function PayoutQueuePage() {
                       <CopyButton value={String(r.amountNaira)} label="amount" />
                     </td>
                     <td className="px-4 py-3">
-                      <div className="text-gray-700">
+                      <div className="text-gray-800">
                         {r.bankName} · {r.bankAccountName}
                       </div>
-                      <span className="font-mono text-xs">
+                      <span className="font-mono text-xs text-gray-800">
                         {r.bankAccountNumber}
                         <CopyButton value={r.bankAccountNumber} label="account number" />
                       </span>
@@ -502,40 +553,14 @@ export default function PayoutQueuePage() {
                         {r.status}
                       </span>
                     </td>
-                    {(tab === "pending" || tab === "processing") && (
-                      <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center justify-end gap-1 flex-wrap">
-                          {r.status === "pending" && (
-                            <button
-                              onClick={() => setProcessing(r.id)}
-                              className="px-2 py-1 rounded bg-gray-200 text-gray-700 text-xs hover:bg-gray-300"
-                            >
-                              Set Processing
-                            </button>
-                          )}
-                          <button
-                            onClick={() => {
-                              setMarkPaidRequest(r);
-                              setMarkPaidRef("");
-                              setMarkPaidNotes("");
-                              setMarkPaidProofUrl(null);
-                            }}
-                            className="px-2 py-1 rounded bg-emerald-600 text-white text-xs hover:bg-emerald-700"
-                          >
-                            Mark as Paid
-                          </button>
-                          <button
-                            onClick={() => {
-                              setRejectRequest(r);
-                              setRejectReason("");
-                            }}
-                            className="px-2 py-1 rounded bg-red-600 text-white text-xs hover:bg-red-700"
-                          >
-                            Reject
-                          </button>
-                        </div>
-                      </td>
-                    )}
+                    <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        onClick={() => fetchDrawer(r.id)}
+                        className="px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-medium hover:bg-blue-700"
+                      >
+                        View details
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -566,40 +591,92 @@ export default function PayoutQueuePage() {
           </div>
         )}
       </div>
+      </>
+      )}
 
-      {/* Driver context drawer */}
+      {/* Full detail section — replaces list when viewing a payout */}
       {drawerRequestId && (
-        <div
-          className="fixed inset-0 z-50 flex justify-end"
-          aria-modal="true"
-          role="dialog"
-        >
-          <div
-            className="absolute inset-0 bg-black/40"
-            onClick={() => setDrawerRequestId(null)}
-          />
-          <div className="relative w-full max-w-lg bg-white shadow-xl overflow-y-auto">
-            <div className="sticky top-0 flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-white">
-              <h2 className="font-semibold text-gray-900">Driver context</h2>
-              <button
-                onClick={() => setDrawerRequestId(null)}
-                className="p-2 text-gray-500 hover:text-gray-700"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <div className="p-4 space-y-4">
-              {drawerLoading ? (
-                <p className="text-gray-500">Loading...</p>
-              ) : drawerData ? (
-                <>
+        <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gray-50">
+            <h2 className="text-lg font-semibold text-gray-900">Payout details</h2>
+            <button
+              onClick={() => {
+                setDrawerRequestId(null);
+                setDrawerMarkPaidRef("");
+                setDrawerMarkPaidNotes("");
+                setDrawerInvoiceUrl(null);
+              }}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 text-gray-700 text-sm font-medium hover:bg-gray-100"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              Back to list
+            </button>
+          </div>
+          <div className="p-6">
+            {drawerLoading ? (
+              <p className="text-gray-700">Loading...</p>
+            ) : drawerData ? (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Left column */}
+                <div className="space-y-6">
+                  {/* Request summary */}
+                  <div className="rounded-lg border border-gray-200 p-4 bg-gray-50">
+                    <h3 className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">Withdrawal request</h3>
+                    <div className="flex justify-between items-baseline">
+                      <span className="text-2xl font-bold text-gray-900">₦{drawerData.request.amountNaira.toLocaleString()}</span>
+                      <span
+                        className={`px-2 py-0.5 rounded text-xs font-medium ${
+                          drawerData.request.status === "pending"
+                            ? "bg-amber-100 text-amber-800"
+                            : drawerData.request.status === "processing"
+                            ? "bg-blue-100 text-blue-800"
+                            : drawerData.request.status === "completed"
+                            ? "bg-emerald-100 text-emerald-800"
+                            : "bg-red-100 text-red-800"
+                        }`}
+                      >
+                        {drawerData.request.status}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-700 mt-1">{formatDate(drawerData.request.requestedAt)}</p>
+                  </div>
+
+                  {/* Bank details */}
+                  <div className="rounded-lg border border-gray-200 p-4">
+                    <h3 className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-3">Bank details</h3>
+                    <dl className="space-y-3">
+                      <div>
+                        <dt className="text-xs text-gray-600 font-medium">Bank name</dt>
+                        <dd className="flex items-center gap-1 mt-0.5">
+                          <span className="font-medium">{drawerData.request.bankName}</span>
+                          <CopyButton value={drawerData.request.bankName} label="bank name" />
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-xs text-gray-600 font-medium">Account name</dt>
+                        <dd className="flex items-center gap-1 mt-0.5">
+                          <span className="font-medium">{drawerData.request.bankAccountName}</span>
+                          <CopyButton value={drawerData.request.bankAccountName} label="account name" />
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-xs text-gray-600 font-medium">Account number</dt>
+                        <dd className="flex items-center gap-1 mt-0.5">
+                          <span className="font-mono font-medium">{drawerData.request.bankAccountNumber}</span>
+                          <CopyButton value={drawerData.request.bankAccountNumber} label="account number" />
+                        </dd>
+                      </div>
+                    </dl>
+                  </div>
+
+                  {/* Identity */}
                   <div>
-                    <h3 className="text-xs font-medium text-gray-500 uppercase mb-1">Identity</h3>
+                    <h3 className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Identity</h3>
                     <div className="flex flex-wrap gap-2 items-center">
                       <span className="font-medium">KYC: {drawerData.driver.kycName}</span>
-                      <span className="text-gray-400">|</span>
+                      <span className="text-gray-500">|</span>
                       <span>Bank account: {drawerData.driver.bankAccountName}</span>
                       {drawerData.driver.nameMismatch && (
                         <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-800 text-xs font-medium">
@@ -607,48 +684,54 @@ export default function PayoutQueuePage() {
                         </span>
                       )}
                     </div>
+                    <p className="text-sm text-gray-700 mt-1">{drawerData.driver.email}</p>
+                    {drawerData.driver.phone && <p className="text-sm text-gray-700">{drawerData.driver.phone}</p>}
                   </div>
+
+                  {/* Ledger */}
                   <div>
-                    <h3 className="text-xs font-medium text-gray-500 uppercase mb-1">Ledger</h3>
+                    <h3 className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Ledger</h3>
                     <div className="rounded border border-gray-200 overflow-hidden">
                       <table className="w-full text-sm">
                         <tbody>
                           <tr className="border-b border-gray-100">
-                            <td className="px-3 py-2 text-gray-600">Completed trips</td>
+                            <td className="px-3 py-2 text-gray-700">Completed trips</td>
                             <td className="px-3 py-2 text-right">{drawerData.ledger.completedTrips}</td>
                           </tr>
                           <tr className="border-b border-gray-100">
-                            <td className="px-3 py-2 text-gray-600">Total earned (kobo)</td>
+                            <td className="px-3 py-2 text-gray-700">Total earned</td>
                             <td className="px-3 py-2 text-right">{drawerData.ledger.totalEarned}</td>
                           </tr>
                           <tr className="border-b border-gray-100">
-                            <td className="px-3 py-2 text-gray-600">Platform deduction</td>
+                            <td className="px-3 py-2 text-gray-700">Platform deduction</td>
                             <td className="px-3 py-2 text-right">-{drawerData.ledger.platformDeduction}</td>
                           </tr>
                           <tr className="border-b border-gray-100">
-                            <td className="px-3 py-2 text-gray-600">Net earnings</td>
+                            <td className="px-3 py-2 text-gray-700">Net earnings</td>
                             <td className="px-3 py-2 text-right">{drawerData.ledger.netEarnings}</td>
                           </tr>
                           <tr>
-                            <td className="px-3 py-2 text-gray-600">Current balance</td>
+                            <td className="px-3 py-2 text-gray-700">Current balance</td>
                             <td className="px-3 py-2 text-right font-medium">
-                              ₦{Math.round(drawerData.ledger.currentBalanceKobo / 100).toLocaleString()}
+                              ₦{Number(drawerData.ledger.currentBalanceKobo).toLocaleString()}
                             </td>
                           </tr>
                         </tbody>
                       </table>
                     </div>
                   </div>
+
+                  {/* Last 5 payouts */}
                   <div>
-                    <h3 className="text-xs font-medium text-gray-500 uppercase mb-1">Last 5 payouts</h3>
+                    <h3 className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Last 5 payouts</h3>
                     <ul className="space-y-1 text-sm">
                       {drawerData.lastFivePayouts.length === 0 ? (
-                        <li className="text-gray-500">None</li>
+                        <li className="text-gray-700">None</li>
                       ) : (
                         drawerData.lastFivePayouts.map((p) => (
                           <li key={p.id} className="flex justify-between">
-                            <span>₦{p.amountNaira.toLocaleString()}</span>
-                            <span className="text-gray-500">
+                            <span className="text-gray-800">₦{p.amountNaira.toLocaleString()}</span>
+                            <span className="text-gray-700">
                               {p.processedAt ? formatDate(p.processedAt) : ""} {p.bankReferenceNumber && `· ${p.bankReferenceNumber}`}
                             </span>
                           </li>
@@ -656,11 +739,116 @@ export default function PayoutQueuePage() {
                       )}
                     </ul>
                   </div>
-                </>
-              ) : (
-                <p className="text-gray-500">Failed to load context.</p>
-              )}
-            </div>
+
+                </div>
+
+                {/* Right column — Actions + Mark as paid */}
+                <div className="space-y-6">
+                  {/* Invoice upload + Mark as paid (for pending/processing) */}
+                  {(drawerData.request.status === "pending" || drawerData.request.status === "processing") && (
+                    <div className="rounded-lg border border-gray-200 bg-gray-50 p-5 space-y-4">
+                      <h3 className="text-sm font-semibold text-gray-900">Actions</h3>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Bank reference / session ID <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={drawerMarkPaidRef}
+                          onChange={(e) => setDrawerMarkPaidRef(e.target.value)}
+                          placeholder="e.g. TRF123456"
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Upload invoice</label>
+                        <input
+                          type="file"
+                          accept="image/*,.pdf"
+                          className="w-full text-sm text-gray-700 file:mr-2 file:py-1.5 file:px-3 file:rounded file:border-0 file:bg-gray-200 file:text-gray-800"
+                          onChange={(e) => {
+                            const f = e.target.files?.[0];
+                            if (f) handleDrawerInvoiceUpload(f);
+                            e.target.value = "";
+                          }}
+                          disabled={drawerInvoiceUploading}
+                        />
+                        {drawerInvoiceUploading && <span className="text-xs text-gray-700">Uploading…</span>}
+                        {(drawerInvoiceUrl || drawerData.request.proofOfPaymentUrl) && (
+                          <a
+                            href={drawerInvoiceUrl || drawerData.request.proofOfPaymentUrl || ""}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-blue-600 hover:underline block mt-1"
+                          >
+                            View invoice
+                          </a>
+                        )}
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Internal notes (optional)</label>
+                        <textarea
+                          value={drawerMarkPaidNotes}
+                          onChange={(e) => setDrawerMarkPaidNotes(e.target.value)}
+                          rows={2}
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                        />
+                      </div>
+                      <div className="flex flex-wrap gap-3 pt-2">
+                        <button
+                          onClick={handleDrawerMarkPaid}
+                          disabled={!drawerMarkPaidRef.trim() || drawerMarkPaidLoading}
+                          className="flex-1 px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-50"
+                        >
+                          {drawerMarkPaidLoading ? "Saving…" : "Mark as paid"}
+                        </button>
+                        {drawerData.request.status === "pending" && (
+                          <button
+                            onClick={() => setProcessing(drawerRequestId)}
+                            className="px-4 py-2 rounded-lg border border-blue-300 text-blue-700 text-sm font-medium hover:bg-blue-50"
+                          >
+                            Set Processing
+                          </button>
+                        )}
+                        <button
+                          onClick={() => {
+                            const req = requests.find((r) => r.id === drawerRequestId);
+                            setRejectRequest(
+                              req ??
+                                ({
+                                  id: drawerRequestId,
+                                  amountNaira: drawerData?.request?.amountNaira ?? 0,
+                                } as PayoutRequest),
+                            );
+                            setRejectReason("");
+                          }}
+                          className="px-4 py-2 rounded-lg border border-red-300 text-red-700 text-sm font-medium hover:bg-red-50"
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Invoice link for completed */}
+                  {drawerData.request.status === "completed" && drawerData.request.proofOfPaymentUrl && (
+                    <div>
+                      <h3 className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Invoice</h3>
+                      <a
+                        href={drawerData.request.proofOfPaymentUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:underline text-sm"
+                      >
+                        View invoice
+                      </a>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <p className="text-gray-700">Failed to load context.</p>
+            )}
           </div>
         </div>
       )}
@@ -671,7 +859,7 @@ export default function PayoutQueuePage() {
           <div className="absolute inset-0 bg-black/50" onClick={() => setMarkPaidRequest(null)} />
           <div className="relative bg-white rounded-xl shadow-lg max-w-md w-full p-6 space-y-4">
             <h3 className="font-semibold text-gray-900">Mark as paid</h3>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-700">
               Request: {markPaidRequest.id.slice(0, 8)}… · ₦{markPaidRequest.amountNaira.toLocaleString()}
             </p>
             <div>
@@ -691,7 +879,7 @@ export default function PayoutQueuePage() {
               <input
                 type="file"
                 accept="image/*,.pdf"
-                className="w-full text-sm text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded file:border-0 file:bg-gray-100 file:text-gray-700"
+                className="w-full text-sm text-gray-700 file:mr-2 file:py-1.5 file:px-3 file:rounded file:border-0 file:bg-gray-200 file:text-gray-800"
                 onChange={(e) => {
                   const f = e.target.files?.[0];
                   if (f) handleProofUpload(f);
@@ -740,7 +928,7 @@ export default function PayoutQueuePage() {
           <div className="absolute inset-0 bg-black/50" onClick={() => setRejectRequest(null)} />
           <div className="relative bg-white rounded-xl shadow-lg max-w-md w-full p-6 space-y-4">
             <h3 className="font-semibold text-gray-900">Reject withdrawal</h3>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-700">
               Request: {rejectRequest.id.slice(0, 8)}… · ₦{rejectRequest.amountNaira.toLocaleString()}. Driver will be notified.
             </p>
             <div>
@@ -783,7 +971,7 @@ export default function PayoutQueuePage() {
           <div className="absolute inset-0 bg-black/50" onClick={() => setBulkReconcileOpen(false)} />
           <div className="relative bg-white rounded-xl shadow-lg max-w-md w-full p-6 space-y-4">
             <h3 className="font-semibold text-gray-900">Reconcile batch</h3>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-700">
               Mark {selectedProcessing.length} request(s) as completed with one master reference.
             </p>
             <div>

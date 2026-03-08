@@ -48,16 +48,18 @@ export async function POST(
     return NextResponse.json({ error: "Driver wallet not found" }, { status: 500 });
   }
 
+  // WithdrawalRequest.amount is in kobo; wallet balance is in naira (payment verify credits naira)
+  const refundNaira = Math.round(wr.amount / 100);
   await prisma.$transaction([
     prisma.wallet.update({
       where: { driverId: wr.driverId },
-      data: { balance: { increment: wr.amount } },
+      data: { balance: { increment: refundNaira } },
     }),
     prisma.walletTransaction.create({
       data: {
         walletId: wallet.id,
         type: "credit",
-        amount: wr.amount,
+        amount: refundNaira,
         description: `Withdrawal rejected - refund (${reason})`,
         status: "success",
         reference: `refund_${id}_${Date.now()}`,

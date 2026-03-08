@@ -85,6 +85,7 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [revenueFilter, setRevenueFilter] = useState<"Monthly" | "Quarterly" | "Yearly">("Monthly");
+  const [vehicleTypeFilter, setVehicleTypeFilter] = useState<string>("all");
 
   const fetchStats = useCallback(async () => {
     const token = localStorage.getItem("admin_token");
@@ -157,9 +158,7 @@ export default function AdminDashboardPage() {
 
       {/* Command Center — Real-Time Operations */}
       <div className="bg-slate-800 rounded-xl border border-slate-700 p-6 text-white">
-        <h2 className="text-lg font-bold text-white mb-4">The Command Center — Real-Time Operations</h2>
-        <p className="text-slate-300 text-sm mb-6">Vital signs of the logistics network. View at a glance to identify immediate bottlenecks.</p>
-
+       
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
           <div className="bg-slate-700/50 rounded-lg p-4">
             <p className="text-slate-400 text-xs font-medium uppercase tracking-wider">Live Active Orders</p>
@@ -194,14 +193,34 @@ export default function AdminDashboardPage() {
 
         {/* Fleet by vehicle class */}
         <div className="mb-6">
-          <h3 className="text-sm font-semibold text-slate-200 mb-3">Live Fleet Status by vehicle class</h3>
+          <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
+            <h3 className="text-sm font-semibold text-slate-200">Fleet by vehicle type</h3>
+            <div className="flex items-center gap-2">
+              <label htmlFor="vehicle-type-filter" className="text-slate-400 text-xs font-medium">Filter:</label>
+              <select
+                id="vehicle-type-filter"
+                value={vehicleTypeFilter}
+                onChange={(e) => setVehicleTypeFilter(e.target.value)}
+                className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="all">All vehicle types</option>
+                {Object.keys(cc.fleet.byTruckType).sort().map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-            {Object.entries(cc.fleet.byTruckType).map(([truckType, data]) => (
-              <div key={truckType} className="bg-slate-700/50 rounded-lg p-3">
-                <p className="font-medium text-white">{truckType}</p>
-                <p className="text-slate-400 text-xs mt-1">Total: {data.total} · Idle: {data.idle} · En route / Loaded: {data.enRouteOrLoaded}</p>
-              </div>
-            ))}
+            {Object.entries(cc.fleet.byTruckType)
+              .filter(([truckType]) => vehicleTypeFilter === "all" || truckType === vehicleTypeFilter)
+              .map(([truckType, data]) => (
+                <div key={truckType} className="bg-slate-700/50 rounded-lg p-3">
+                  <p className="font-medium text-white">{truckType}</p>
+                  <p className="text-slate-400 text-xs mt-1">Total: {data.total} · Idle: {data.idle} · En route / Loaded: {data.enRouteOrLoaded}</p>
+                </div>
+              ))}
             {Object.keys(cc.fleet.byTruckType).length === 0 && (
               <p className="text-slate-500 text-sm col-span-full">No fleet data yet</p>
             )}

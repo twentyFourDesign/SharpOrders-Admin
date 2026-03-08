@@ -54,7 +54,9 @@ export async function POST(request: Request) {
   if (!wallet) {
     return NextResponse.json({ error: "Wallet not found" }, { status: 404 });
   }
-  if (wallet.balance < amountKobo) {
+  // Wallet balance is stored in naira (same units as payment credits from verify).
+  // amountNaira is what the user requested; compare in naira.
+  if (wallet.balance < amountNaira) {
     return NextResponse.json({ error: "Insufficient balance" }, { status: 400 });
   }
 
@@ -67,7 +69,7 @@ export async function POST(request: Request) {
     const wr = await tx.withdrawalRequest.create({
       data: {
         driverId,
-        amount: amountKobo,
+        amount: amountKobo, // WithdrawalRequest stores kobo for admin payout
         status: "pending",
         bankName,
         bankAccountName,
@@ -76,15 +78,16 @@ export async function POST(request: Request) {
         riskUnusuallyLarge,
       },
     });
+    // Wallet balance is stored in naira; decrement by naira amount
     await tx.wallet.update({
       where: { driverId },
-      data: { balance: { decrement: amountKobo } },
+      data: { balance: { decrement: amountNaira } },
     });
     await tx.walletTransaction.create({
       data: {
         walletId: wallet.id,
         type: "debit",
-        amount: amountKobo,
+        amount: amountNaira, // Wallet/transactions store naira (same as credits)
         description: "Withdrawal (pending approval)",
         status: "pending",
         reference: `wd_${wr.id}`,
