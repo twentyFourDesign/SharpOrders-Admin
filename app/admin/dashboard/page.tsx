@@ -56,7 +56,7 @@ const TRIP_REVENUE_DATA = [
 
 // Revenue split: 70% platform/shipper, 20% driver earnings, 10% service fee
 const REVENUE_SPLIT_DATA = [
-  { name: "Platform / Shipper", value: 70, color: "#1e3a5f" },
+  { name: "Platform", value: 70, color: "#1e3a5f" },
   { name: "Driver Earnings", value: 20, color: "#3b82f6" },
   { name: "Service Fee", value: 10, color: "#10b981" },
 ];

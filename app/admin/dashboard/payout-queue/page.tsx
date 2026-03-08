@@ -623,7 +623,7 @@ export default function PayoutQueuePage() {
                 <div className="space-y-6">
                   {/* Request summary */}
                   <div className="rounded-lg border border-gray-200 p-4 bg-gray-50">
-                    <h3 className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">Withdrawal request</h3>
+                    <h3 className="text-xs font-semibold text-gray-800 uppercase tracking-wider mb-2">Withdrawal request</h3>
                     <div className="flex justify-between items-baseline">
                       <span className="text-2xl font-bold text-gray-900">₦{drawerData.request.amountNaira.toLocaleString()}</span>
                       <span
@@ -640,31 +640,31 @@ export default function PayoutQueuePage() {
                         {drawerData.request.status}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-700 mt-1">{formatDate(drawerData.request.requestedAt)}</p>
+                    <p className="text-sm text-gray-900 mt-1">{formatDate(drawerData.request.requestedAt)}</p>
                   </div>
 
                   {/* Bank details */}
                   <div className="rounded-lg border border-gray-200 p-4">
-                    <h3 className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-3">Bank details</h3>
+                    <h3 className="text-xs font-semibold text-gray-800 uppercase tracking-wider mb-3">Bank details</h3>
                     <dl className="space-y-3">
                       <div>
-                        <dt className="text-xs text-gray-600 font-medium">Bank name</dt>
+                        <dt className="text-xs text-gray-800 font-medium">Bank name</dt>
                         <dd className="flex items-center gap-1 mt-0.5">
-                          <span className="font-medium">{drawerData.request.bankName}</span>
+                          <span className="font-medium text-gray-900">{drawerData.request.bankName}</span>
                           <CopyButton value={drawerData.request.bankName} label="bank name" />
                         </dd>
                       </div>
                       <div>
-                        <dt className="text-xs text-gray-600 font-medium">Account name</dt>
+                        <dt className="text-xs text-gray-800 font-medium">Account name</dt>
                         <dd className="flex items-center gap-1 mt-0.5">
-                          <span className="font-medium">{drawerData.request.bankAccountName}</span>
+                          <span className="font-medium text-gray-900">{drawerData.request.bankAccountName}</span>
                           <CopyButton value={drawerData.request.bankAccountName} label="account name" />
                         </dd>
                       </div>
                       <div>
-                        <dt className="text-xs text-gray-600 font-medium">Account number</dt>
+                        <dt className="text-xs text-gray-800 font-medium">Account number</dt>
                         <dd className="flex items-center gap-1 mt-0.5">
-                          <span className="font-mono font-medium">{drawerData.request.bankAccountNumber}</span>
+                          <span className="font-mono font-medium text-gray-900">{drawerData.request.bankAccountNumber}</span>
                           <CopyButton value={drawerData.request.bankAccountNumber} label="account number" />
                         </dd>
                       </div>
@@ -673,46 +673,46 @@ export default function PayoutQueuePage() {
 
                   {/* Identity */}
                   <div>
-                    <h3 className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Identity</h3>
+                    <h3 className="text-xs font-semibold text-gray-800 uppercase tracking-wider mb-1">Identity</h3>
                     <div className="flex flex-wrap gap-2 items-center">
-                      <span className="font-medium">KYC: {drawerData.driver.kycName}</span>
-                      <span className="text-gray-500">|</span>
-                      <span>Bank account: {drawerData.driver.bankAccountName}</span>
+                      <span className="font-medium text-gray-900">KYC: {drawerData.driver.kycName}</span>
+                      <span className="text-gray-600">|</span>
+                      <span className="text-gray-900">Bank account: {drawerData.driver.bankAccountName}</span>
                       {drawerData.driver.nameMismatch && (
                         <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-800 text-xs font-medium">
                           Mismatch
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-gray-700 mt-1">{drawerData.driver.email}</p>
-                    {drawerData.driver.phone && <p className="text-sm text-gray-700">{drawerData.driver.phone}</p>}
+                    <p className="text-sm text-gray-900 mt-1">{drawerData.driver.email}</p>
+                    {drawerData.driver.phone && <p className="text-sm text-gray-900">{drawerData.driver.phone}</p>}
                   </div>
 
                   {/* Ledger */}
                   <div>
-                    <h3 className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Ledger</h3>
+                    <h3 className="text-xs font-semibold text-gray-800 uppercase tracking-wider mb-1">Ledger</h3>
                     <div className="rounded border border-gray-200 overflow-hidden">
                       <table className="w-full text-sm">
                         <tbody>
                           <tr className="border-b border-gray-100">
-                            <td className="px-3 py-2 text-gray-700">Completed trips</td>
-                            <td className="px-3 py-2 text-right">{drawerData.ledger.completedTrips}</td>
+                            <td className="px-3 py-2 text-gray-800">Completed trips</td>
+                            <td className="px-3 py-2 text-right text-gray-900">{drawerData.ledger.completedTrips}</td>
                           </tr>
                           <tr className="border-b border-gray-100">
-                            <td className="px-3 py-2 text-gray-700">Total earned</td>
-                            <td className="px-3 py-2 text-right">{drawerData.ledger.totalEarned}</td>
+                            <td className="px-3 py-2 text-gray-800">Total earned</td>
+                            <td className="px-3 py-2 text-right text-gray-900">{drawerData.ledger.totalEarned}</td>
                           </tr>
                           <tr className="border-b border-gray-100">
-                            <td className="px-3 py-2 text-gray-700">Platform deduction</td>
-                            <td className="px-3 py-2 text-right">-{drawerData.ledger.platformDeduction}</td>
+                            <td className="px-3 py-2 text-gray-800">Platform deduction</td>
+                            <td className="px-3 py-2 text-right text-gray-900">-{drawerData.ledger.platformDeduction}</td>
                           </tr>
                           <tr className="border-b border-gray-100">
-                            <td className="px-3 py-2 text-gray-700">Net earnings</td>
-                            <td className="px-3 py-2 text-right">{drawerData.ledger.netEarnings}</td>
+                            <td className="px-3 py-2 text-gray-800">Net earnings</td>
+                            <td className="px-3 py-2 text-right text-gray-900">{drawerData.ledger.netEarnings}</td>
                           </tr>
                           <tr>
-                            <td className="px-3 py-2 text-gray-700">Current balance</td>
-                            <td className="px-3 py-2 text-right font-medium">
+                            <td className="px-3 py-2 text-gray-800">Current balance</td>
+                            <td className="px-3 py-2 text-right font-medium text-gray-900">
                               ₦{Number(drawerData.ledger.currentBalanceKobo).toLocaleString()}
                             </td>
                           </tr>
@@ -723,15 +723,15 @@ export default function PayoutQueuePage() {
 
                   {/* Last 5 payouts */}
                   <div>
-                    <h3 className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Last 5 payouts</h3>
+                    <h3 className="text-xs font-semibold text-gray-800 uppercase tracking-wider mb-1">Last 5 payouts</h3>
                     <ul className="space-y-1 text-sm">
                       {drawerData.lastFivePayouts.length === 0 ? (
-                        <li className="text-gray-700">None</li>
+                        <li className="text-gray-900">None</li>
                       ) : (
                         drawerData.lastFivePayouts.map((p) => (
                           <li key={p.id} className="flex justify-between">
-                            <span className="text-gray-800">₦{p.amountNaira.toLocaleString()}</span>
-                            <span className="text-gray-700">
+                            <span className="text-gray-900 font-medium">₦{p.amountNaira.toLocaleString()}</span>
+                            <span className="text-gray-900">
                               {p.processedAt ? formatDate(p.processedAt) : ""} {p.bankReferenceNumber && `· ${p.bankReferenceNumber}`}
                             </span>
                           </li>
@@ -833,7 +833,7 @@ export default function PayoutQueuePage() {
                   {/* Invoice link for completed */}
                   {drawerData.request.status === "completed" && drawerData.request.proofOfPaymentUrl && (
                     <div>
-                      <h3 className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Invoice</h3>
+                      <h3 className="text-xs font-semibold text-gray-800 uppercase tracking-wider mb-1">Invoice</h3>
                       <a
                         href={drawerData.request.proofOfPaymentUrl}
                         target="_blank"
