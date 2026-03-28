@@ -86,7 +86,7 @@ export default function AdminSettingsPage() {
 
   function handleLogout() {
     localStorage.removeItem("admin_token");
-    router.replace("/");
+    router.replace("/admin/login");
   }
 
   return (

@@ -6,7 +6,7 @@ export default function AdminIndexPage() {
   const router = useRouter();
   useEffect(() => {
     const token = localStorage.getItem("admin_token");
-    router.replace(token ? "/admin/dashboard" : "/");
+    router.replace(token ? "/admin/dashboard" : "/admin/login");
   }, [router]);
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-950">

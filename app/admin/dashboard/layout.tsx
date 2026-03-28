@@ -28,9 +28,9 @@ export default function AdminDashboardLayout({ children }: { children: React.Rea
 
   const fetchMe = useCallback(async () => {
     const token = localStorage.getItem("admin_token");
-    if (!token) { router.replace("/"); return; }
+    if (!token) { router.replace("/admin/login"); return; }
     const res = await fetch("/api/admin/auth/me", { headers: { Authorization: `Bearer ${token}` } });
-    if (!res.ok) { localStorage.removeItem("admin_token"); router.replace("/"); return; }
+    if (!res.ok) { localStorage.removeItem("admin_token"); router.replace("/admin/login"); return; }
     const data = await res.json();
     setAdmin(data.admin);
   }, [router]);
@@ -39,7 +39,7 @@ export default function AdminDashboardLayout({ children }: { children: React.Rea
 
   function handleLogout() {
     localStorage.removeItem("admin_token");
-    router.replace("/");
+    router.replace("/admin/login");
   }
 
   if (!admin) {

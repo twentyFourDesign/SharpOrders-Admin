@@ -14,7 +14,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "SharpOrder — Logistics & Freight",
-  description: "SharpOrder admin dashboard and API for logistics, freight, and shipment management.",
+  description:
+    "SharpOrder connects shippers and drivers for freight: loads, bids, shipments, and driver tools. Download on Google Play.",
 };
 
 export default function RootLayout({
@@ -25,7 +26,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}
       >
         {children}
       </body>
