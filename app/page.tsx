@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { Logo } from "@/components/logo";
+
 const PLAY_STORE_URL =
   "https://play.google.com/store/apps/details?id=com.sharporder";
 
@@ -41,22 +43,7 @@ export default function HomePage() {
             href="/"
             className="flex items-center gap-2.5 text-[15px] font-semibold tracking-tight text-white"
           >
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-teal-400 to-emerald-600 text-white shadow-lg shadow-teal-900/40">
-              <svg
-                className="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-                aria-hidden
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M13 10V3L4 14h7v7l9-11h-7z"
-                />
-              </svg>
-            </span>
+            <Logo width={36} height={36} className="h-9 w-9 rounded-xl" priority />
             SharpOrder
           </Link>
           <nav className="flex items-center gap-1 sm:gap-2">
@@ -266,6 +253,7 @@ export default function HomePage() {
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col gap-10 lg:flex-row lg:items-start lg:justify-between">
             <div>
+              <Logo width={40} height={40} className="mb-3 h-10 w-10 rounded-lg" />
               <p className="text-sm font-semibold text-white">SharpOrder</p>
               <p className="mt-2 max-w-xs text-sm leading-relaxed text-zinc-500">
                 Mobile logistics for shippers and drivers. API and services for the

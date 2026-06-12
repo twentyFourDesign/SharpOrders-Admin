@@ -16,6 +16,10 @@ export const metadata: Metadata = {
   title: "SharpOrder — Logistics & Freight",
   description:
     "SharpOrder connects shippers and drivers for freight: loads, bids, shipments, and driver tools. Download on Google Play.",
+  icons: {
+    icon: "/logo.png",
+    apple: "/logo.png",
+  },
 };
 
 export default function RootLayout({

@@ -4,6 +4,8 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 
+import { Logo } from "@/components/logo";
+
 type AdminUser = { id: string; email: string; name?: string | null; isSuperAdmin: boolean };
 
 const NAV_ITEMS = [
@@ -79,11 +81,7 @@ export default function AdminDashboardLayout({ children }: { children: React.Rea
       <aside className="hidden md:flex flex-col w-60 bg-[#1e293b] shrink-0">
         {/* Logo bar - brighter blue */}
         <div className="flex items-center gap-3 px-4 py-4 bg-blue-600">
-          <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
-            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-            </svg>
-          </div>
+          <Logo width={40} height={40} className="h-10 w-10 shrink-0 rounded-lg" />
           <span className="text-white font-bold text-lg">Sharp Orders</span>
         </div>
 
@@ -109,11 +107,7 @@ export default function AdminDashboardLayout({ children }: { children: React.Rea
           <div className="absolute inset-0 bg-black/50" onClick={() => setSidebarOpen(false)} />
           <div className="absolute left-0 top-0 bottom-0 w-60 bg-[#1e293b] flex flex-col z-50">
             <div className="flex items-center gap-3 px-4 py-4 bg-blue-600">
-              <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                </svg>
-              </div>
+              <Logo width={40} height={40} className="h-10 w-10 shrink-0 rounded-lg" />
               <span className="text-white font-bold text-lg">Sharp Orders</span>
             </div>
             <NavLinks />

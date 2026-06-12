@@ -1,4 +1,6 @@
 import Link from "next/link";
+
+import { Logo } from "@/components/logo";
 import { LEGAL_NAV } from "../nav-config";
 
 type LegalShellProps = {
@@ -16,6 +18,18 @@ export function LegalShell({
 }: LegalShellProps) {
   return (
     <div className="mx-auto w-full max-w-4xl overflow-hidden rounded-2xl border border-zinc-200/90 bg-white shadow-md">
+      <div className="flex items-center justify-between border-b border-zinc-200/80 bg-white px-5 py-4 sm:px-6">
+        <Link href="/" className="flex items-center gap-2.5">
+          <Logo width={36} height={36} className="h-9 w-9 rounded-lg" />
+          <span className="text-sm font-semibold text-zinc-800">SharpOrder</span>
+        </Link>
+        <Link
+          href="/"
+          className="text-sm text-zinc-500 transition hover:text-zinc-800"
+        >
+          Back to home
+        </Link>
+      </div>
       <header className="flex flex-col gap-1 border-b border-zinc-200/80 bg-[#f0eef5] px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-5">
         <h1 className="text-lg font-bold tracking-tight text-zinc-800 sm:text-xl">
           {headerTitle}
